@@ -58,10 +58,20 @@ jobs:
     # Builds a wheel needed for the CD part
     - name: Build wheel of package
       run: pip wheel --no-deps -w dist .
+      
+    - name: Creating a artifact dir and copy artifacts
+    - run: mkdir -p dist_artifacts
+    - run: cp dist/*.whl dist_artifacts/
+  
+    - name: Use the Upload Artifact GitHub Action
+      uses: actions/upload-artifact@v2
+      with: 
+        name: wheel artifact
+        path: dist_artifacts/*.whl
         
-    # Tests if the actual wheel file is functional
+    # Test if the created wheel file can be installed
     - name: Install wheel of package into conda env
-      run: pip install dist/cmaclp-{[0-9].[0-9].[0-9]}-py3-none-any.whl --force-reinstall
+      run: pip install dist/*.whl --force-reinstall
       
     # Download data into own directory
     - name: Download labels  
@@ -81,10 +91,4 @@ jobs:
     # Running unit tests
     - name: Running unit tests    
       run: pytest cmaclp/tests/cmaclp_test.py --cov
-      
-    - name: Use the Upload Artifact GitHub Action
-      uses: actions/upload-artifact@v2
-      with: 
-        name: cma-{[0-9].[0-9].[0-9]}-py3-none-any.whl
-        path: dist
 # TO DO: write unit tests and add Codecov
