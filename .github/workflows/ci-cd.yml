@@ -1,0 +1,129 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI/CD
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main and develop" branch
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  ci:
+    # Set up operating system
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    # Docker Hub image that `postgres-job` executes in
+    #container: node:latest
+    # service containers to run with `postgres-job`
+    steps:
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+        
+    - name: Check-out repository
+      uses: actions/checkout@v2
+
+      #- name: Install Python dependencies
+      #  uses: py-actions/py-dependency-install@v4
+        
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        miniconda-version: "latest"
+        channels: bioconda, conda-forge, defaults
+        use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+        auto-update-conda: true
+        auto-activate-base: true
+        
+    - name: Install cmaclp pip
+      run: |
+            echo "begin: PATH=$PATH;"
+
+            conda create -y --name cmaclp pip python=3.9
+
+            conda activate cmaclp || true
+            echo "after conda activate cmaclp: PATH=$PATH;"
+            which cmaclp || true
+            # Use cmaclp in ci-cd workflow
+      
+    # Builds a wheel needed for the CD part
+    - name: Build wheel of package
+      run: pip wheel --no-deps -w dist .
+      
+    - name: Creating a artifact dir
+      run: mkdir -p dist_artifacts
+      
+    - name: Copying artifact to artifact dir
+      run: cp dist/*.whl dist_artifacts/
+  
+    - name: Use the Upload Artifact GitHub Action
+      uses: actions/upload-artifact@v2
+      with: 
+        name: wheel artifact
+        path: dist_artifacts/*.whl
+        
+    # Test if the created wheel file can be installed
+    - name: Install wheel of package into conda env
+      run: pip install dist/*.whl --force-reinstall
+      
+    # Download data into own directory
+    - name: Download labels  
+      run: curl -o training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
+
+    - name: Download training 
+      run: curl -o small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
+
+    - name: Download test
+      run: curl -o cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
+
+    # Trim labels for small unit test
+    - name: Trim labels for unit test
+      run: sed -i 1001q training_labels_meta.csv
+      
+    # Pre-process 
+    # Running unit tests
+    - name: Running unit tests    
+      run: pytest cmaclp/tests/cmaclp_test.py --cov
+# TO DO: write unit tests and add Codecov
+
+  cd:
+    # Only run this job if the "ci" job passes
+    needs: ci
+    
+    # Only run this job if new work is pushed to "main"
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Set up operating system
+    runs-on: ubuntu-latest
+
+    # Define job steps
+    steps:
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+        
+    - name: Create dist dir
+      run: mkdir -p dist
+
+    - name: Download artifact
+      uses: actions/download-artifact@master
+      with:
+        name: wheel artifact
+        path: dist/*.whl
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
