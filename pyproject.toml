@@ -1,12 +1,17 @@
-[build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools", "wheel", "python-build", "pytest-cov"]
+[project]
+name = "cmaclp"
+version="0.0.6"
+description = "Corneal meta-atlas command line predictor"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 #[tool.setuptools.package-data]
 #"cma.data" = ["*.csv", "*.h5ad"]
 
 [tool.bumpver]
-current_version = "0.0.1"
+current_version = "0.0.6"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true
