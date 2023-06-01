@@ -44,6 +44,7 @@ jobs:
         use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
         auto-update-conda: true
         auto-activate-base: true
+        
     - name: Install cmaclp pip
       run: |
             echo "begin: PATH=$PATH;"
@@ -59,9 +60,11 @@ jobs:
     - name: Build wheel of package
       run: pip wheel --no-deps -w dist .
       
-    - name: Creating a artifact dir and copy artifacts
-    - run: mkdir -p dist_artifacts
-    - run: cp dist/*.whl dist_artifacts/
+    - name: Creating a artifact dir
+      run: mkdir -p dist_artifacts
+      
+    - name: Copying artifact to artifact dir
+      run: cp dist/*.whl dist_artifacts/
   
     - name: Use the Upload Artifact GitHub Action
       uses: actions/upload-artifact@v2
