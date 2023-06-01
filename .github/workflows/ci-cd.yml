@@ -61,7 +61,7 @@ jobs:
         
     # Tests if the actual wheel file is functional
     - name: Install wheel of package into conda env
-      run: pip install dist/cmaclp-0.0.1-py3-none-any.whl --force-reinstall
+      run: pip install dist/cmaclp-{[0-9].[0-9].[0-9]}-py3-none-any.whl --force-reinstall
       
     # Download data into own directory
     - name: Download labels  
@@ -81,5 +81,10 @@ jobs:
     # Running unit tests
     - name: Running unit tests    
       run: pytest cmaclp/tests/cmaclp_test.py --cov
-
+      
+    - name: Use the Upload Artifact GitHub Action
+      uses: actions/upload-artifact@v2
+      with: 
+        name: cma-{[0-9].[0-9].[0-9]}-py3-none-any.whl
+        path: dist
 # TO DO: write unit tests and add Codecov
