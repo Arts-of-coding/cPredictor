@@ -120,7 +120,10 @@ jobs:
       uses: actions/download-artifact@master
       with:
         name: wheel artifact
-        path: dist/*.whl
+        path: dist
+        
+    - name: Unzip artifact
+      run: unzip dist/* -d dist
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
