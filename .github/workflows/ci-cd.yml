@@ -121,10 +121,7 @@ jobs:
       with:
         name: wheel artifact
         path: dist
-        
-    - name: Unzip artifact
-      run: unzip dist/* -d dist
-
+  
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
