@@ -292,7 +292,7 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
     
-def SVM_performance(reference_H5AD, OutputDir, SVM_type="SVMrej", LabelsPath, fold_splits=5,Threshold=0.7):
+def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold=0.7):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
 
