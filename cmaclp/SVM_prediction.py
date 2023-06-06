@@ -35,9 +35,12 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
     print("Reading in the reference and query H5AD objects")
     
     # Load in the cma.h5ad object or use a different reference
-    if meta_atlas==False:
+    if meta_atlas is False:
         training=read_h5ad(reference_H5AD) 
-    if meta_atlas==True:
+    if meta_atlas is True:
+    #    if not if os.path.exists(DEG_file):
+    #        if not outputdir == "":
+        os.makedirs(OutputDir, exist_ok=True)
         meta_dir=files('cmaclp.data').joinpath('cma_meta_atlas.h5ad')
         training=read_h5ad(meta_dir) 
 
@@ -83,13 +86,13 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
     data_test = matrix_test2
     
     # If meta_atlas=True it will read the training_labels
-    if meta_atlas==True:
+    if meta_atlas is True:
         LabelsPathTrain = files('cmaclp.data').joinpath('training_labels_meta.csv')
     
     labels_train = pd.read_csv(LabelsPathTrain, header=0,index_col=None, sep=',')
         
     # Set threshold for rejecting cells
-    if rejected == True:
+    if rejected is True:
         Threshold = Threshold_rej
 
     print("Log normalizing the training and testing data")
@@ -101,7 +104,7 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
     Classifier = LinearSVC()
     pred = []
     
-    if rejected == True:
+    if rejected is True:
         print("Running SVMrejection")
         clf = CalibratedClassifierCV(Classifier, cv=3)
         probability = [] 
@@ -119,7 +122,7 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
         pred.to_csv(str(OutputDir) + "SVMrej_Pred_Labels.csv", index = False)
         probability.to_csv(str(OutputDir) + "SVMrej_Prob.csv", index = False)
     
-    if rejected == False:
+    if rejected is False:
         print("Running SVM")
         Classifier.fit(data_train, labels_train.values.ravel())
         predicted = Classifier.predict(data_test)    
@@ -129,7 +132,7 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
         # Save the predicted labels
         pred.to_csv(str(OutputDir) + "SVM_Pred_Labels.csv", index =False)
 
-def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=True, show_umap=True, show_bar=True):
+def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=False, show_umap=False, show_bar=False):
     '''
     Imports the output of the SVM_predictor and saves it to the query_H5AD.
 
@@ -147,7 +150,7 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
     SVM_key=f"{SVM_type}_predicted"
     
     # Set category colors:
-    if meta_atlas == True:
+    if meta_atlas is True:
         category_colors = {"LSC": "#66CD00",
                     "LESC": "#76EE00",
                     "LE": "#66CDAA",
@@ -169,7 +172,7 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
     print("Adding predictions to query data")
     for file in os.listdir(OutputDir):
         if file.endswith('.csv'):
-            if not 'rej' in file:
+            if 'rej' not in file:
                 filedir= OutputDir+file
                 #print(filedir)
                 influence_data= pd.read_csv(filedir,sep=',',index_col=0)
@@ -194,8 +197,8 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
     # Plot UMAP if selected
     print("Plotting UMAP")
     sc.set_figure_params(figsize=(5, 5))
-    if show_umap == True:
-        if meta_atlas == True:
+    if show_umap is True:
+        if meta_atlas is True:
             category_order_list = ["LSC", "LESC","LE","Cj","CE","qSK","SK","TSK","CF","EC","Ves","Mel","IC","nm-cSC","MC","Unknown"]
             adata.obs[SVM_key] = adata.obs[SVM_key].astype("category")
             adata.obs[SVM_key] = adata.obs[SVM_key].cat.set_categories(category_order_list, ordered=True)
@@ -205,13 +208,13 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
             
     # Plot absolute and relative barcharts across replicates
     print("Plotting barcharts")
-    if show_bar == True:
+    if show_bar is True:
         sc.set_figure_params(figsize=(15, 5))
         key=SVM_key
         obs_1 = key
         obs_2 = replicates
 
-        n_categories = {x : len(adata.obs[x].cat.categories) for x in [obs_1, obs_2]}
+        #n_categories = {x : len(adata.obs[x].cat.categories) for x in [obs_1, obs_2]}
         df = adata.obs[[obs_2, obs_1]].values
 
         obs2_clusters = adata.obs[obs_2].cat.categories.tolist()
@@ -231,7 +234,7 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
         df.columns=obs1_clusters
         df.index.names = ['Replicate']
 
-        if meta_atlas == True:
+        if meta_atlas is True:
             ordered_list=["LSC", "LESC","LE","Cj","CE","qSK","SK","TSK","CF","EC","Ves","Mel","IC","nm-cSC","MC","Unknown"]
             palette=category_colors
             lstval = [palette[key] for key in ordered_list]
@@ -242,14 +245,14 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
         stacked_data=stacked_data.iloc[:, ::-1]
 
         fig, ax =plt.subplots(1,2)
-        if meta_atlas == True:
+        if meta_atlas is True:
             df.plot(kind="bar", stacked=True, ax=ax[0], legend = False,color=lstval, rot=45, title='Absolute number of cells')
         else:
             df.plot(kind="bar", stacked=True, ax=ax[0], legend = False, rot=45, title='Absolute number of cells')
 
         fig.legend(loc=7,title="Cell state")
 
-        if meta_atlas == True:
+        if meta_atlas is True:
             stacked_data.plot(kind="bar", stacked=True, legend = False, ax=ax[1],color=lstval[::-1], rot=45, title='Percentage of cells')
         else:
             stacked_data.plot(kind="bar", stacked=True, legend = False, ax=ax[1], rot=45, title='Percentage of cells')
@@ -283,7 +286,7 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
         plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
         # Saving the density plot
-        fig.savefig(f"figures/Density_prediction_scores.pdf", bbox_inches='tight')
+        fig.savefig("figures/Density_prediction_scores.pdf", bbox_inches='tight')
         plt.close(fig)
     else:
         None
@@ -291,7 +294,8 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
     print("Saving H5AD file")
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
-    
+
+
 def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold=0.7):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
@@ -307,7 +311,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     Data = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
 
-    labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',', usecols = col)
+    labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
 
     # read the data
     data = Data
@@ -341,9 +345,9 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     test_indices = []
 
     # Iterate over each fold and split the data
-    print(f"Generate indices for train and test")
+    print("Generate indices for train and test")
     for train_index, test_index in kfold.split(X):
-        X_train, X_test = X[train_index], X[test_index]
+        #X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
         # Store the indices of the training and test sets for each fold
@@ -398,7 +402,6 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
         truelab.extend(y_test)
 
-
     truelab = pd.DataFrame(truelab)
     pred = pd.DataFrame(pred)
 
@@ -413,14 +416,14 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     F1score= f1_score(truelab[0].to_list(), pred[0].to_list(), average='weighted')
     print(f"The {SVM_type} model ran with the median weighted F1 score of: {F1score}")
 
-    print(f"Saving labels to specified output directory")
+    print("Saving labels to specified output directory")
     truelab.to_csv(f"{OutputDir}{SVM_type}_True_Labels.csv", index = False)
     pred.to_csv(f"{OutputDir}{SVM_type}_Pred_Labels.csv", index = False)
     tr_time.to_csv(f"{OutputDir}{SVM_type}_Training_Time.csv", index = False)
     ts_time.to_csv(f"{OutputDir}{SVM_type}_Testing_Time.csv", index = False)
 
     ## Plot the SVM figures
-    print(f"Plotting the confusion matrix for the ")
+    print("Plotting the confusion matrix")
     true = pd.read_csv(f"{OutputDir}{SVM_type}_True_Labels.csv")
     pred = pd.read_csv(f"{OutputDir}{SVM_type}_Pred_Labels.csv")
 
@@ -444,7 +447,8 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     cm.savefig(f"figures/{SVM_type}_cnf_matrix.png")
     return
 
-def main():
+
+def predpars():
     # Create the parser
     parser = argparse.ArgumentParser(description='Run SVM prediction')
 
@@ -462,11 +466,65 @@ def main():
     args = parser.parse_args()
     
     # check that output directory exists, create it if necessary
-    if not os.path.isdir(args.OutputDir):
-        os.makedirs(args.OutputDir)
+    #if not os.path.isdir(args.OutputDir):
+    #    os.makedirs(args.OutputDir)
 
     # Call the svm_prediction function with the parsed arguments
     SVM_prediction(args.reference_H5AD, args.query_H5AD, args.LabelsPathTrain, args.OutputDir, args.rejected, args.Threshold_rej, args.meta_atlas)
 
-if __name__ == '__main__':
-    main()
+
+def performpars():
+
+    # Create the parser
+    parser = argparse.ArgumentParser(description="Tests performance of SVM model based on a reference H5AD dataset.")
+    parser.add_argument("reference_H5AD", help="Path to the reference H5AD file")
+    parser.add_argument("OutputDir", help="Output directory path")
+    parser.add_argument("LabelsPath", help="Path to the labels CSV file")
+    parser.add_argument("--SVM_type", default="SVMrej", help="Type of SVM prediction (default: SVMrej)")
+    parser.add_argument("--fold_splits", type=int, default=5, help="Number of fold splits for cross-validation (default: 5)")
+    parser.add_argument("--Threshold", type=float, default=0.7, help="Threshold value (default: 0.7)")
+    args = parser.parse_args()
+
+    SVM_performance(
+        args.reference_H5AD,
+        args.OutputDir,
+        args.LabelsPath,
+        SVM_type=args.SVM_type,
+        fold_splits=args.fold_splits,
+        Threshold=args.Threshold)
+
+
+def importpars():
+
+    parser = argparse.ArgumentParser(description="Imports predicted results back to H5AD file")
+    parser.add_argument("query_H5AD", help="Path to query H5AD file")
+    parser.add_argument("OutputDir", help="Output directory path")
+    parser.add_argument("SVM_type", help="Type of SVM prediction (SVM or SVMrej)")
+    parser.add_argument("replicates", help="Replicates")
+    parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta atlas data")
+    parser.add_argument("--show-umap", dest="show_umap", action="store_true", help="Show UMAP plotting")
+    parser.add_argument("--show-bar", dest="show_bar", action="store_true", help="Show bar chart plotting")
+
+    args = parser.parse_args()
+
+    SVM_import(
+        args.query_H5AD,
+        args.OutputDir,
+        args.SVM_type,
+        args.replicates,
+        args.meta_atlas,
+        args.show_umap,
+        args.show_bar)
+
+
+if __name__ == '__predpars__':
+    predpars()
+
+    
+if __name__ == '__performpars__':
+    performpars()
+
+
+if __name__ == '__importpars__':
+    importpars()
+
