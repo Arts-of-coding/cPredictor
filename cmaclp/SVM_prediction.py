@@ -466,8 +466,8 @@ def predpars():
     args = parser.parse_args()
     
     # check that output directory exists, create it if necessary
-    #if not os.path.isdir(args.OutputDir):
-    #    os.makedirs(args.OutputDir)
+    if not os.path.isdir(args.OutputDir):
+        os.makedirs(args.OutputDir)
 
     # Call the svm_prediction function with the parsed arguments
     SVM_prediction(args.reference_H5AD, args.query_H5AD, args.LabelsPathTrain, args.OutputDir, args.rejected, args.Threshold_rej, args.meta_atlas)
