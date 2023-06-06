@@ -292,7 +292,7 @@ def SVM_prediction_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atla
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
     
-def SVM_performance(reference_H5AD, OutputDir, SVM_type="SVMrej", LabelsPath, Splits=5,Threshold=0.7):
+def SVM_performance(reference_H5AD, OutputDir, SVM_type="SVMrej", LabelsPath, fold_splits=5,Threshold=0.7):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
 
@@ -300,7 +300,6 @@ def SVM_performance(reference_H5AD, OutputDir, SVM_type="SVMrej", LabelsPath, Sp
     reference_H5AD : H5AD file of datasets of interest.
     OutputDir : Output directory defining the path of the exported SVM_predictions.
     SVM_type: Type of SVM prediction, SVM or SVMrej (default).
-    ...
     '''
 
     print("Reading in the data")
@@ -336,7 +335,7 @@ def SVM_performance(reference_H5AD, OutputDir, SVM_type="SVMrej", LabelsPath, Sp
     res
 
     # Perform cross-validation using train_test_split
-    kfold = KFold(n_splits=Splits, shuffle=True, random_state=42)
+    kfold = KFold(n_splits=fold_splits, shuffle=True, random_state=42)
 
     train_indices = []
     test_indices = []
@@ -363,7 +362,7 @@ def SVM_performance(reference_H5AD, OutputDir, SVM_type="SVMrej", LabelsPath, Sp
     truelab = []
     pred = []
 
-    for i in range(Splits):
+    for i in range(fold_splits):
         print(f"Running cross-val {i}")
         train=data[train_ind[i]]
         test=data[test_ind[i]]
