@@ -106,7 +106,8 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
     
     if rejected is True:
         print("Running SVMrejection")
-        clf = CalibratedClassifierCV(Classifier, cv=3)
+        kf = KFold(n_splits=3)
+        clf = CalibratedClassifierCV(Classifier, cv=kf)
         probability = [] 
         clf.fit(data_train, labels_train.values.ravel())
         predicted = clf.predict(data_test)
@@ -131,6 +132,7 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
         
         # Save the predicted labels
         pred.to_csv(str(OutputDir) + "SVM_Pred_Labels.csv", index =False)
+
 
 def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=False, show_umap=False, show_bar=False):
     '''
@@ -210,11 +212,14 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=False, sh
     print("Plotting barcharts")
     if show_bar is True:
         sc.set_figure_params(figsize=(15, 5))
+        
         key=SVM_key
         obs_1 = key
         obs_2 = replicates
 
         #n_categories = {x : len(adata.obs[x].cat.categories) for x in [obs_1, obs_2]}
+        adata.obs[obs_1] = adata.obs[obs_1].astype("category")
+        adata.obs[obs_2] = adata.obs[obs_2].astype("category")
         df = adata.obs[[obs_2, obs_1]].values
 
         obs2_clusters = adata.obs[obs_2].cat.categories.tolist()
@@ -470,16 +475,23 @@ def predpars():
         os.makedirs(args.OutputDir)
 
     # Call the svm_prediction function with the parsed arguments
-    SVM_prediction(args.reference_H5AD, args.query_H5AD, args.LabelsPathTrain, args.OutputDir, args.rejected, args.Threshold_rej, args.meta_atlas)
+    SVM_prediction(
+        args.reference_H5AD,
+        args.query_H5AD,
+        args.LabelsPathTrain,
+        args.OutputDir,
+        args.rejected,
+        args.Threshold_rej,
+        args.meta_atlas)
 
 
 def performpars():
 
     # Create the parser
     parser = argparse.ArgumentParser(description="Tests performance of SVM model based on a reference H5AD dataset.")
-    parser.add_argument("reference_H5AD", help="Path to the reference H5AD file")
-    parser.add_argument("OutputDir", help="Output directory path")
-    parser.add_argument("LabelsPath", help="Path to the labels CSV file")
+    parser.add_argument("--reference_H5AD", type=str, help="Path to the reference H5AD file")
+    parser.add_argument("--OutputDir", type=str, help="Output directory path")
+    parser.add_argument("--LabelsPath", type=str, help="Path to the labels CSV file")
     parser.add_argument("--SVM_type", default="SVMrej", help="Type of SVM prediction (default: SVMrej)")
     parser.add_argument("--fold_splits", type=int, default=5, help="Number of fold splits for cross-validation (default: 5)")
     parser.add_argument("--Threshold", type=float, default=0.7, help="Threshold value (default: 0.7)")
@@ -497,10 +509,10 @@ def performpars():
 def importpars():
 
     parser = argparse.ArgumentParser(description="Imports predicted results back to H5AD file")
-    parser.add_argument("query_H5AD", help="Path to query H5AD file")
-    parser.add_argument("OutputDir", help="Output directory path")
-    parser.add_argument("SVM_type", help="Type of SVM prediction (SVM or SVMrej)")
-    parser.add_argument("replicates", help="Replicates")
+    parser.add_argument("--query_H5AD", type=str, help="Path to query H5AD file")
+    parser.add_argument("--OutputDir", type=str, help="Output directory path")
+    parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
+    parser.add_argument("--replicates", type=str, help="Replicates")
     parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta atlas data")
     parser.add_argument("--show-umap", dest="show_umap", action="store_true", help="Show UMAP plotting")
     parser.add_argument("--show-bar", dest="show_bar", action="store_true", help="Show bar chart plotting")
