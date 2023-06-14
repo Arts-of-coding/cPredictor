@@ -89,10 +89,6 @@ jobs:
 
     - name: Download test
       run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
-
-    # Trim labels for small unit test
-    - name: Trim labels for unit test
-      run: sed -i 1001q data/training_labels_meta.csv
       
     # Pre-process 
     # Running unit tests
