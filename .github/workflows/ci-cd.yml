@@ -60,8 +60,8 @@ jobs:
     - name: Build wheel of package
       run: pip wheel --no-deps -w dist .
       
-    - name: Creating a artifact dir
-      run: mkdir -p dist_artifacts
+    - name: Creating needed directories
+      run: mkdir -p dist_artifacts data figures
       
     - name: Copying artifact to artifact dir
       run: cp dist/*.whl dist_artifacts/
@@ -78,17 +78,13 @@ jobs:
       
     # Download data into own directory
     - name: Download labels  
-      run: curl -o training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
+      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
 
     - name: Download training 
-      run: curl -o small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
+      run: curl -o data/small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
 
     - name: Download test
-      run: curl -o cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
-
-    # Trim labels for small unit test
-    - name: Trim labels for unit test
-      run: sed -i 1001q training_labels_meta.csv
+      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
       
     # Pre-process 
     # Running unit tests

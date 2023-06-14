@@ -1,6 +1,6 @@
 [project]
 name = "cmaclp"
-version="0.0.7"
+version="0.0.8"
 description = "Corneal meta-atlas command line predictor"
 dynamic = ["dependencies"]
 
@@ -11,7 +11,7 @@ dependencies = {file = ["requirements.txt"]}
 #"cma.data" = ["*.csv", "*.h5ad"]
 
 [tool.bumpver]
-current_version = "0.0.7"
+current_version = "0.0.8"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true
