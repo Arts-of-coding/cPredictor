@@ -6,6 +6,7 @@ import scanpy as sc
 import time as tm
 import seaborn as sns
 import rpy2.robjects as robjects
+import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
@@ -150,25 +151,6 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=False, sh
     print("Reading query data")
     adata=read_h5ad(query_H5AD)
     SVM_key=f"{SVM_type}_predicted"
-    
-    # Set category colors:
-    if meta_atlas is True:
-        category_colors = {"LSC": "#66CD00",
-                    "LESC": "#76EE00",
-                    "LE": "#66CDAA",
-                    "Cj": "#191970",
-                    "CE": "#1874CD",
-                    "qSK": "#FFB90F",
-                    "SK": "#EEAD0E",
-                    "TSK": "#FF7F00",
-                    "CF": "#CD6600",
-                    "EC": "#87CEFA",
-                    "Ves": "#8B2323",
-                    "Mel": "#FFFF00",
-                    "IC": "#00CED1",
-                    "nm-cSC": "#FF0000",
-                    "MC": "#CD3700",
-                    "Unknown": "#808080"}
 
     # Load in the object and add the predicted labels
     print("Adding predictions to query data")
@@ -196,6 +178,39 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=False, sh
                 influence_data=influence_data.index.tolist()
                 adata.obs["SVMrej_predicted_prob"]=influence_data
 
+    # Set category colors:
+    if meta_atlas is True:
+        category_colors = {"LSC": "#66CD00",
+                    "LESC": "#76EE00",
+                    "LE": "#66CDAA",
+                    "Cj": "#191970",
+                    "CE": "#1874CD",
+                    "qSK": "#FFB90F",
+                    "SK": "#EEAD0E",
+                    "TSK": "#FF7F00",
+                    "CF": "#CD6600",
+                    "EC": "#87CEFA",
+                    "Ves": "#8B2323",
+                    "Mel": "#FFFF00",
+                    "IC": "#00CED1",
+                    "nm-cSC": "#FF0000",
+                    "MC": "#CD3700",
+                    "Unknown": "#808080"}
+                    
+    if meta_atlas is False:
+    
+      # Load a large color palette
+      palette_name = "tab20"
+      cmap = plt.get_cmap(palette_name)
+      palette=[matplotlib.colors.rgb2hex(c) for c in cmap.colors] 
+      
+      # Extract the list of colors
+      colors = palette
+      key_cats = adata.obs[SVM_key].astype("category")
+      key_list = key_cats.cat.categories.to_list()
+            
+      category_colors = dict(zip(key_list, colors[:len(key_list)]))
+      
     # Plot UMAP if selected
     print("Plotting UMAP")
     sc.set_figure_params(figsize=(5, 5))
@@ -240,27 +255,34 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, meta_atlas=False, sh
         df.index.names = ['Replicate']
 
         if meta_atlas is True:
-            ordered_list=["LSC", "LESC","LE","Cj","CE","qSK","SK","TSK","CF","EC","Ves","Mel","IC","nm-cSC","MC","Unknown"]
             palette=category_colors
-            lstval = [palette[key] for key in ordered_list]
-            sorter=ordered_list
-            df = df[sorter]
+            if SVM_type == 'SVM':
+              ordered_list=["LSC", "LESC","LE","Cj","CE","qSK","SK","TSK","CF","EC","Ves","Mel","IC","nm-cSC","MC"]
+            if SVM_type == 'SVMrej':
+              ordered_list=["LSC", "LESC","LE","Cj","CE","qSK","SK","TSK","CF","EC","Ves","Mel","IC","nm-cSC","MC","Unknown"]
+            
+            # Sorts the df on the longer ordered list
+            sorter=sorted(df.columns, key=ordered_list.index)
+            
+            # Retrieve the color codes from the sorted list
+            lstval = [palette[key] for key in sorter]
+            
+            try:
+              df=df[sorter]
+            except KeyError:
+              df=df
+        else:
+            lstval=list(category_colors.values())
 
         stacked_data = df.apply(lambda x: x*100/sum(x), axis=1)
         stacked_data=stacked_data.iloc[:, ::-1]
 
         fig, ax =plt.subplots(1,2)
-        if meta_atlas is True:
-            df.plot(kind="bar", stacked=True, ax=ax[0], legend = False,color=lstval, rot=45, title='Absolute number of cells')
-        else:
-            df.plot(kind="bar", stacked=True, ax=ax[0], legend = False, rot=45, title='Absolute number of cells')
+        df.plot(kind="bar", stacked=True, ax=ax[0], legend = False,color=lstval, rot=45, title='Absolute number of cells')
 
         fig.legend(loc=7,title="Cell state")
 
-        if meta_atlas is True:
-            stacked_data.plot(kind="bar", stacked=True, legend = False, ax=ax[1],color=lstval[::-1], rot=45, title='Percentage of cells')
-        else:
-            stacked_data.plot(kind="bar", stacked=True, legend = False, ax=ax[1], rot=45, title='Percentage of cells')
+        stacked_data.plot(kind="bar", stacked=True, legend = False, ax=ax[1],color=lstval[::-1], rot=45, title='Percentage of cells')
 
         fig.tight_layout()
         fig.subplots_adjust(right=0.9)
