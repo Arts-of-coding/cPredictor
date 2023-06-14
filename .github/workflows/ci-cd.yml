@@ -60,8 +60,8 @@ jobs:
     - name: Build wheel of package
       run: pip wheel --no-deps -w dist .
       
-    - name: Creating a artifact dir
-      run: mkdir -p dist_artifacts
+    - name: Creating needed directories
+      run: mkdir -p dist_artifacts data figures
       
     - name: Copying artifact to artifact dir
       run: cp dist/*.whl dist_artifacts/
@@ -75,10 +75,6 @@ jobs:
     # Test if the created wheel file can be installed
     - name: Install wheel of package into conda env
       run: pip install dist/*.whl --force-reinstall
-      
-    # Generate data directory
-    - name: Make data directory
-      run: mkdir data
       
     # Download data into own directory
     - name: Download labels  
