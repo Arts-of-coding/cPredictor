@@ -16,7 +16,7 @@ on:
 jobs:
   test_model_cornea:
     # Set up operating system
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
     
     defaults:
       run:
