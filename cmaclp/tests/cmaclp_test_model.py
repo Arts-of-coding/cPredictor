@@ -23,7 +23,6 @@ import subprocess
 
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
-outdir = "test_output/"
 
 # Add figure map to the import function
 # Change the command-line functions to take them really as arguments + add replicates into the test
@@ -32,8 +31,7 @@ def test_SVMrej_performance():
 
     command_to_be_executed = ['SVM_performance',
                               '--reference_H5AD', str(reference),
-                              '--LabelsPath', str(labels),
-                              '--OutputDir', str(outdir)]
+                              '--LabelsPath', str(labels)]
 
     subprocess.run(command_to_be_executed, shell=False, timeout=None,
                    text=True)
