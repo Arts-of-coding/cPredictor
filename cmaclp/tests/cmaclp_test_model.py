@@ -6,14 +6,19 @@ import pandas as pd
 import scanpy as sc
 import time as tm
 import seaborn as sns
-import cmaclp
-from sklearn.svm import LinearSVC
 import rpy2.robjects as robjects
+import matplotlib
+import matplotlib.pyplot as plt
+from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
 from scanpy import read_h5ad
-from importlib_resources import files
-import subprocess
+from importlib.resources import files
 
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
