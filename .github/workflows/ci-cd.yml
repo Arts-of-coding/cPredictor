@@ -158,7 +158,7 @@ jobs:
         auto-activate-base: true
 
     - name: Create dist dir
-      run: mkdir -p dist figures data
+      run: mkdir -p dist figures data test_output
 
     - name: Download artifact
       uses: actions/download-artifact@master
