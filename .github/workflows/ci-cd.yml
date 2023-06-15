@@ -90,7 +90,6 @@ jobs:
     # Running unit tests
     - name: Running unit tests    
       run: pytest cmaclp/tests/cmaclp_test.py --cov
-# TO DO: write unit tests and add Codecov
 
   cd:
     # Only run this job if the "ci" job passes
@@ -123,3 +122,64 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+
+# TO DO: write unit tests and add Codecov
+  test_model_cornea:
+    # Set up operating system
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    # Docker Hub image that `postgres-job` executes in
+    #container: node:latest
+    # service containers to run with `postgres-job`
+    steps:
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+        
+    - name: Check-out repository
+      uses: actions/checkout@v2
+
+      #- name: Install Python dependencies
+      #  uses: py-actions/py-dependency-install@v4
+        
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        miniconda-version: "latest"
+        channels: bioconda, conda-forge, defaults
+        use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+        auto-update-conda: true
+        auto-activate-base: true
+
+    - name: Create dist dir
+      run: mkdir -p dist figures
+
+    - name: Download artifact
+      uses: actions/download-artifact@master
+      with:
+        name: wheel artifact
+        path: dist
+        
+    # Installs from wheel if ci is finished
+    - name: Install wheel of package into conda env
+      run: pip install dist/*.whl --force-reinstall
+
+    # Download data into own directory
+    - name: Download labels  
+      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
+
+    - name: Download training 
+      run: curl -o data/small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
+
+    - name: Download test
+      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
+
+    # Pre-process 
+    # Running unit tests
+    - name: Running unit tests 
+      run: pytest cmaclp/tests/cmaclp_test_model.py --cov
+      
