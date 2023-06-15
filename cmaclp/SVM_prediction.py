@@ -336,28 +336,21 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     print("Reading in the data")
     Data=read_h5ad(reference_H5AD)
 
-    Data = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
+    data = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
 
     labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
 
-    # read the data
-    data = Data
-
     # Convert the ordered dataframes back to nparrays
     print("Normalising the data")
-    data = data.to_numpy(dtype="uint8")
-    data = np.log1p(data)
+    data = data.to_numpy(dtype="float16")
+    np.log1p(data,out=data)
 
     X = data
-    y = labels["x"].to_list()
+    del data
 
     label_encoder = LabelEncoder()
-
-    # Fit the LabelEncoder to the categorical list
-    label_encoder.fit(y)
-
-    # Convert the categorical list to numerical categories
-    y = label_encoder.transform(y)
+    
+    y = label_encoder.fit_transform(labels["x"].tolist())
 
     # Generate a dictionary to map values to strings
     res = dict(zip(label_encoder.inverse_transform(y),y))
@@ -378,13 +371,17 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
         y_train, y_test = y[train_index], y[test_index]
 
         # Store the indices of the training and test sets for each fold
-        train_indices.append(train_index)
-        test_indices.append(test_index)
+        train_indices.append(list(train_index))
+        test_indices.append(list(test_index))
+        
+    #train_indices = list(train_indices)
+    #test_indices = list(test_indices)
 
     # Run the SVM model
     test_ind=test_indices
     train_ind=train_indices
     Classifier = LinearSVC()
+
     if SVM_type == "SVMrej":
         clf = CalibratedClassifierCV(Classifier, cv=3)
 
@@ -392,11 +389,12 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     ts_time=[]
     truelab = []
     pred = []
+    prob_full = []
 
     for i in range(fold_splits):
         print(f"Running cross-val {i}")
-        train=data[train_ind[i]]
-        test=data[test_ind[i]]
+        train=X[train_ind[i]] # was data
+        test=X[test_ind[i]] # was data
         y_train=y[train_ind[i]]
         y_test=y[test_ind[i]]
 
@@ -414,6 +412,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
             predicted[unlabeled] = 999999 # set arbitrary value to convert it back to a string in the end
             ts_time.append(tm.time()-start)
             pred.extend(predicted)
+            prob_full.extend(prob)
 
         if SVM_type == "SVM":
             start=tm.time()
@@ -435,13 +434,21 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     tr_time = pd.DataFrame(tr_time)
     ts_time = pd.DataFrame(ts_time)
 
+    # Calculating the weighted F1 score:
+    F1score= f1_score(truelab[0].to_list(), pred[0].to_list(), average='weighted')
+    print(f"The {SVM_type} model ran with the weighted F1 score of: {F1score}")
+
+    # Calculating the weighted accuracy score:
+    acc_score = accuracy_score(truelab[0].to_list(), pred[0].to_list())
+    print(f"The {SVM_type} model ran with the weighted accuracy score of: {acc_score}")
+
+    # Calculating the weighted precision score:
+    prec_score = precision_score(truelab[0].to_list(),  pred[0].to_list(),average="weighted")
+    print(f"The {SVM_type} model ran with the weighted precision score of: {prec_score}")
+
     # Relabel truelab and predicted values by names
     truelab[0]=truelab[0].replace(res)
     pred[0]=pred[0].replace(res)
-
-    # Calculating the median F1 score:
-    F1score= f1_score(truelab[0].to_list(), pred[0].to_list(), average='weighted')
-    print(f"The {SVM_type} model ran with the median weighted F1 score of: {F1score}")
 
     print("Saving labels to specified output directory")
     truelab.to_csv(f"{OutputDir}{SVM_type}_True_Labels.csv", index = False)
@@ -472,7 +479,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     sns.set(font_scale=0.8)
     cm = sns.clustermap(cnf_matrix.T, cmap="Blues", annot=True,fmt='.2%', row_cluster=False,col_cluster=False)
     cm.savefig(f"figures/{SVM_type}_cnf_matrix.png")
-    return
+    return F1score,acc_score,prec_score
 
 
 def predpars():
