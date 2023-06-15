@@ -126,6 +126,8 @@ jobs:
 # TO DO: write unit tests and add Codecov
   test_model_cornea:
     # Set up operating system
+    needs: ci
+
     runs-on: ubuntu-latest
     
     defaults:
