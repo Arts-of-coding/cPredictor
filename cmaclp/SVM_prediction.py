@@ -345,7 +345,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     # Convert the ordered dataframes back to nparrays
     print("Normalising the data")
-    data = data.to_numpy()
+    data = data.to_numpy(dtype="uint8")
     data = np.log1p(data)
 
     X = data
