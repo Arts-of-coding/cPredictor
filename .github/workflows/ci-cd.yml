@@ -128,7 +128,7 @@ jobs:
     # Set up operating system
     needs: ci
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
     defaults:
       run:
