@@ -26,7 +26,7 @@ from cmaclp.SVM_prediction import SVM_performance
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
-cmaclp_version = "0.0.9"
+cmaclp_version = "0.0.10"
 
 metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 print(metrics)
