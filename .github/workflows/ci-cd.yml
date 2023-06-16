@@ -128,8 +128,7 @@ jobs:
     # Set up operating system
     needs: ci
 
-    runs-on: ubuntu-20.04
-    timeout-minutes: 600
+    runs-on: self-hosted
     
     defaults:
       run:
