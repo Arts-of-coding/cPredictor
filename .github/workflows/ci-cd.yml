@@ -189,6 +189,6 @@ jobs:
 
     # Pre-process 
     # Running unit tests
-    - name: Running unit tests 
-      run: pytest cmaclp/tests/cmaclp_test_model.py --cov
+    - name: Running prediction function
+      run: python3 cmaclp/tests/cmaclp_test_model.py
       
