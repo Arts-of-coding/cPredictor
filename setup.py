@@ -21,7 +21,7 @@ setup(
   },
   install_requires=['setuptools<=57.5.0', 'wheel', 'python-build',
                     'h5py', 'numpy>=1.23.3, <1.24', 'pandas>=1.4.4',
-                    'scikit-learn', 'scanpy>=1.9.1', 'rpy2',
+                    'scikit-learn', 'scanpy>=1.9.1',
                     'importlib-resources', 'pytest-cov'],
   packages=find_packages(),
   long_description=long_description,
