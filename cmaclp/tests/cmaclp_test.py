@@ -8,7 +8,6 @@ import time as tm
 import seaborn as sns
 import cmaclp
 from sklearn.svm import LinearSVC
-import rpy2.robjects as robjects
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
 from scanpy import read_h5ad
