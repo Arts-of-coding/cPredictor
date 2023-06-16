@@ -157,6 +157,15 @@ jobs:
         auto-update-conda: true
         auto-activate-base: true
 
+    - name: Install cmaclp pip
+      run: |
+            echo "begin: PATH=$PATH;"
+            conda create -y --name cmaclp pip python=3.9
+            conda activate cmaclp || true
+            echo "after conda activate cmaclp: PATH=$PATH;"
+            which cmaclp || true
+            # Use cmaclp in ci-cd workflow
+
     - name: Create dist dir
       run: mkdir -p dist figures data test_output
 
@@ -174,10 +183,7 @@ jobs:
     - name: Download labels  
       run: curl -o data/training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
 
-    - name: Download training 
-      run: curl -o data/small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
-
-    - name: Download test
+    - name: Download CV data
       run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
 
     # Pre-process 
