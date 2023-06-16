@@ -19,21 +19,14 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from scanpy import read_h5ad
 from importlib.resources import files
-import subprocess
+
+print("import performance function")
+from cmaclp.SVM_prediction import SVM_performance
 
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
-outdir= "test_output/"
+outdir = "test_output/"
+cmaclp_version = "0.0.9"
 
-# Add figure map to the import function
-# Change the command-line functions to take them really as arguments + add replicates into the test
-
-def test_SVMrej_performance():
-
-    command_to_be_executed = ['SVM_performance',
-                              '--reference_H5AD', str(reference),
-                              '--OutputDir',str(outdir),'--LabelsPath', str(labels)]
-
-    subprocess.run(command_to_be_executed, shell=False, timeout=None,
-                   text=True)
-    assert os.path.exists(f'figures/SVMrej_cnf_matrix.png') == 1
+metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
+print(metrics)
