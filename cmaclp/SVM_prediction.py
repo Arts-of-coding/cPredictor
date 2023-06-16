@@ -14,6 +14,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
 from scanpy import read_h5ad
 from importlib.resources import files
 
