@@ -32,7 +32,7 @@ def test_SVMrej_performance():
 
     command_to_be_executed = ['SVM_performance',
                               '--reference_H5AD', str(reference),
-                              '--Outputdir',str(outdir),'--LabelsPath', str(labels)]
+                              '--OutputDir',str(outdir),'--LabelsPath', str(labels)]
 
     subprocess.run(command_to_be_executed, shell=False, timeout=None,
                    text=True)
