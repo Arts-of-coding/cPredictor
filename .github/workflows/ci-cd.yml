@@ -186,8 +186,13 @@ jobs:
     - name: Download CV data
       run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
 
-    # Pre-process 
-    # Running unit tests
-    - name: Running prediction function
-      run: python3 cmaclp/tests/cmaclp_test_model.py
+    - name: Download ML tracking packages
+      run: pip install dagshub mlflow
       
+    # Pre-process 
+    # Running prediction function
+    - name: Running CV and logging results to DagsHub
+      env:
+        DH_key: ${{ secrets.DH_key }}
+      run: python3 cmaclp/tests/cmaclp_test_model.py
+
