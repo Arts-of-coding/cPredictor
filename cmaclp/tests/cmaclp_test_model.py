@@ -21,6 +21,8 @@ from importlib.resources import files
 
 print("Import performance function")
 from cmaclp.SVM_prediction import SVM_performance
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
+import git
 
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
@@ -29,14 +31,7 @@ cmaclp_version = "0.1.0"
 
 metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
-print("Setup ML tracking packages")
-import dagshub
-import mlflow
-
-print("Setup environments and tokens")
-os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-import git
-
+print("Setup tokens")
 # Set environments and passwords
 DAGSHUB_USER_NAME = 'Arts-of-coding'
 DAGSHUB_TOKEN =  os.environ['DH_key']
@@ -45,6 +40,10 @@ MLFLOW_EXPERIMENT_NAME = 'Cornea'
 DAGSHUB_REPO_NAME='cmaclp'
 Upload_type="GHA"
 SVM_model="SVMrej"
+
+print("Setup ML tracking packages")
+import dagshub
+import mlflow
 
 os.environ['MLFLOW_TRACKING_USERNAME'] = DAGSHUB_USER_NAME
 os.environ['MLFLOW_TRACKING_PASSWORD'] = DAGSHUB_TOKEN
