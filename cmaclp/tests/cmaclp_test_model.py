@@ -33,6 +33,10 @@ print("Setup ML tracking packages")
 import dagshub
 import mlflow
 
+print("Setup environments and tokens")
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
+import git
+
 # Set environments and passwords
 DAGSHUB_USER_NAME = 'Arts-of-coding'
 DAGSHUB_TOKEN =  os.environ['DH_key']
