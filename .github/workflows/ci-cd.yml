@@ -189,6 +189,9 @@ jobs:
     - name: Download ML tracking packages
       run: pip install dagshub mlflow
       
+    - name: Install git
+      run: conda install git
+      
     # Pre-process 
     # Running prediction function
     - name: Running CV and logging results to DagsHub
