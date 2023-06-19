@@ -59,7 +59,7 @@ try:
 except:
     pass
 
-mlflow.start_run(run_name=str(f'{MLFLOW_EXPERIMENT_NAME}_full_{Upload_type}'),experiment_id=experiment_id,
+mlflow.start_run(run_name=str(f'{MLFLOW_EXPERIMENT_NAME}_full_{Upload_type}'),experiment_id=MLFLOW_EXPERIMENT_NAME,
                  tags={"version": str(cmaclp_version),"model": str(SVM_model)})
 mlflow.log_metric("weighted_F1_score", metrics[0])
 mlflow.log_metric("weighted_accuracy_score", metrics[1])
