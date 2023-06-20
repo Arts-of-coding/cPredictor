@@ -55,11 +55,12 @@ print("Upload metrics to dagshub for model tracking")
 
 # Create new experiment if it does not exist yet otherwise add to the current experiment
 try:
-    experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+    expid = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
 except:
-    pass
+    print(f'Using existing run of {MLFLOW_EXPERIMENT_NAME}')
+    mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
-mlflow.start_run(run_name=str(f'{MLFLOW_EXPERIMENT_NAME}_full_{Upload_type}'),experiment_id=MLFLOW_EXPERIMENT_NAME,
+mlflow.start_run(run_name=str(f'{MLFLOW_EXPERIMENT_NAME}_full_{Upload_type}'),experiment_id=None,
                  tags={"version": str(cmaclp_version),"model": str(SVM_model)})
 mlflow.log_metric("weighted_F1_score", metrics[0])
 mlflow.log_metric("weighted_accuracy_score", metrics[1])
