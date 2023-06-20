@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
   name='cmaclp',
-  version='0.0.10',
+  version='0.1.0',
   # To provide executable scripts, use entry points in preference to the
   # "scripts" keyword. Entry points provide cross-platform support and allow
   # pip to create the appropriate form of executable for the target platform.
@@ -21,7 +21,7 @@ setup(
   },
   install_requires=['setuptools<=57.5.0', 'wheel', 'python-build',
                     'h5py', 'numpy>=1.23.3, <1.24', 'pandas>=1.4.4',
-                    'scikit-learn', 'scanpy>=1.9.1', 'rpy2',
+                    'scikit-learn', 'scanpy>=1.9.1',
                     'importlib-resources', 'pytest-cov'],
   packages=find_packages(),
   long_description=long_description,

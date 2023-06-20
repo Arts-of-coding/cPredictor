@@ -5,7 +5,6 @@ import pandas as pd
 import scanpy as sc
 import time as tm
 import seaborn as sns
-import rpy2.robjects as robjects
 import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.svm import LinearSVC
