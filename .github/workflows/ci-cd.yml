@@ -61,7 +61,7 @@ jobs:
       run: pip wheel --no-deps -w dist .
       
     - name: Creating needed directories
-      run: mkdir -p dist_artifacts data figures
+      run: mkdir -p dist_artifacts data figures test_output_unit
       
     - name: Copying artifact to artifact dir
       run: cp dist/*.whl dist_artifacts/
