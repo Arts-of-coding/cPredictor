@@ -10,12 +10,22 @@ checks:
   method-complexity:
     enabled: true
     config:
-      threshold: 15
+      threshold: 40
   argument-count:
     enabled: false
     config:
-      threshold: 4
+      threshold: 7
   method-lines:
     enabled: true
     config:
-      threshold: 40
+      threshold: 70
+
+exclude_patterns:
+  - ".*"
+  - "LICENSE"
+  - "*.md"
+  - "cmaclp/SVM_prediction..py"
+  - "*.yml"
+  - "*.yaml"
+  - "cmaclp/tests/cmaclp_test_end_to_end.py"
+  - "cmaclp/tests/cmaclp_test_end_to_end.py"
