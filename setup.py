@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
   name='cmaclp',
-  version='0.1.0',
+  version='0.1.1',
   # To provide executable scripts, use entry points in preference to the
   # "scripts" keyword. Entry points provide cross-platform support and allow
   # pip to create the appropriate form of executable for the target platform.

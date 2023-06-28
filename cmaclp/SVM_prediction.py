@@ -17,6 +17,10 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from scanpy import read_h5ad
 from importlib.resources import files
+import re
+from statistics import mean
+from scipy.stats import pearsonr
+from scipy.stats import spearmanr
 
 def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
@@ -481,6 +485,192 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     cm = sns.clustermap(cnf_matrix.T, cmap="Blues", annot=True,fmt='.2%', row_cluster=False,col_cluster=False)
     cm.savefig(f"figures/{SVM_type}_cnf_matrix.png")
     return F1score,acc_score,prec_score
+
+
+def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50):
+    '''
+    Produces pseudobulk RNA-seq count files and sample files of either technical or biological replicates.
+    It produces pseudobulk of all labels from LabelsPath against predicted labels after SVMprediction.
+    Moreover, it produces overall pseudobulk of condition_1 vs condition_2 split by indicated batches.
+
+    Parameters:
+    condition_1, condition_2 : H5AD files with cells-genes matrix with cell unique barcodes as 
+        row names and gene names as column names. Condition_1 should be the meta-atlas and
+        condition_2 should be the queried object.
+    condition_1_batch : batch name for the meta-atlas object replicates (biological, technical etc.)
+    condition_2_batch: batch name for the queried object
+    Labels_1 : Cell population annotations file path matching the training data (.csv) or 
+        a string that specifies an .obs value in condition 1.
+    OutputDir: The directory into which the results are outputted; default: "pseudobulk_output/"
+    '''
+    print("Reading in the reference and query H5AD objects and adding batches")
+    cond_1=read_h5ad(condition_1)
+    cond_2=read_h5ad(condition_2)
+    outputdir=OutputDir
+    
+    # Reading in the Labels_1 for the replicates
+    # First tries to read in Labels_1 as a path
+    try:
+      label_data=pd.read_csv(Labels_1,sep=',',index_col=0)
+      label_data=label_data.index.tolist()
+      cond_1.obs["meta_atlas"]=label_data
+      cond_1_label="meta_atlas"
+    # Then tries to read in Labels_1 as a string in obs
+    except (TypeError, FileNotFoundError) as error:
+      try:
+        cond_1_label=str(Labels_1)
+        cond_1.obs[cond_1_label]
+    # If no key if found a valid key must be entered
+      except KeyError:
+        raise ValueError('Please provide a valid name for labels in Labels_1')
+      
+    print("Constructing condition for condition 1")
+    cond_1.obs["condition"]="cond1"
+
+    print("Constructing batches for condition 1")
+    # Add extra index to the ref object:
+    cond_1.obs["batch"] = cond_1.obs[condition_1_batch]
+
+    # Convert the 'Category' column to numeric labels
+    cond_1.obs["batch"] = pd.factorize(cond_1.obs["batch"])[0] + 1
+
+    cond_1.obs["merged"]=cond_1.obs[cond_1_label]+"."+cond_1.obs["condition"]
+    cond_1.obs["merged_batch"]=cond_1.obs["merged"]+"."+cond_1.obs["batch"].astype(str)
+    cond_1.obs["full_batch"]=cond_1.obs["condition"]+"."+cond_1.obs["batch"].astype(str)
+
+    ######################################################
+    # This will be in the actual function
+    print("Constructing batches for condition 2")
+    
+    #cond_2=sc.read_h5ad("SVM_predicted.h5ad")
+    cond_2_label="SVM_predicted"
+    batch=condition_2_batch
+
+    cond_2.obs["condition"]="cond2"
+    cond_2.obs["batch"]=cond_2.obs[batch]
+    cond_2.obs["merged"]=cond_2.obs[cond_2_label].astype(str)+"."+cond_2.obs["condition"]
+    cond_2.obs["merged_batch"]=cond_2.obs["merged"]+"."+cond_2.obs["batch"].astype(str)
+    cond_2.obs["full_batch"]=cond_2.obs["condition"]+"."+cond_2.obs["batch"].astype(str)
+    
+    os.makedirs(outputdir, exist_ok=True)
+        
+    # Use each object as a condition
+    for cond in cond_1,cond_2:
+        cond_str = cond.obs["condition"].astype(str)[1]
+        print(f"Running with {cond_str}")
+
+        if cond.obs["condition"].astype(str)[1] == "cond1":
+            cond_name="cond1"
+        elif cond.obs["condition"].astype(str)[1] == "cond2":
+            cond_name="cond2"
+
+        # Construct the sample.tsv file    
+        cond.obs["assembly"]="hg38"
+
+        adata = cond.copy()
+
+        # extract names of genes
+        try:
+            adata.var_names=adata.var["_index"].tolist()
+        except KeyError:
+            adata.var_names=adata.var.index
+
+
+        for cluster_id in ["merged_batch","full_batch"]:
+            print("Running pseudobulk extraction with: "+str(cluster_id))
+            if cluster_id == "full_batch":
+                sample_lists=adata.obs[[cluster_id,"assembly","condition","full_batch"]]
+            if cluster_id == "merged_batch":
+                sample_lists=adata.obs[[cluster_id,"assembly","merged","condition","full_batch"]]  
+            sample_lists=sample_lists.reset_index(drop=True)
+            sample_lists=sample_lists.drop_duplicates()
+            sample_lists.rename(columns={ sample_lists.columns[0]: "sample" }, inplace = True)
+
+            rna_count_lists = list()
+            FPKM_count_lists = list()
+            cluster_names = list()
+
+            for cluster in adata.obs[cluster_id].astype("category").unique():
+
+                # Only use ANANSE on clusters with more than minimal amount of cells
+                n_cells = adata.obs[cluster_id].value_counts()[cluster]
+
+                if n_cells > min_cells:
+                    cluster_names.append(str(cluster))
+
+                    # Generate the raw count file
+                    adata_sel = adata[adata.obs[cluster_id].isin([cluster])].copy()
+                    adata_sel.raw=adata_sel
+
+                    print(
+                        str("gather data from " + cluster + " with " + str(n_cells) + " cells")
+                    )
+
+                    X_clone = adata_sel.X.tocsc()
+                    X_clone.data = np.ones(X_clone.data.shape)
+                    NumNonZeroElementsByColumn = X_clone.sum(0)
+                    rna_count_lists += [list(np.array(NumNonZeroElementsByColumn)[0])]
+                    sc.pp.normalize_total(adata_sel, target_sum=1e6, inplace=True)
+                    X_clone2=adata_sel.X.toarray()
+                    NumNonZeroElementsByColumn = [X_clone2.sum(0)]
+                    FPKM_count_lists += [list(np.array(NumNonZeroElementsByColumn)[0])]
+
+            # Specify the df.index
+            df = adata.T.to_df()
+
+            # Generate the count matrix df
+            rna_count_lists = pd.DataFrame(rna_count_lists)
+            rna_count_lists = rna_count_lists.transpose()
+            rna_count_lists.columns = cluster_names
+            rna_count_lists.index = adata.var_names
+            rna_count_lists["average"] = rna_count_lists.mean(axis=1)
+            rna_count_lists = rna_count_lists.astype("int")
+
+            # Generate the FPKM matrix df
+            FPKM_count_lists = pd.DataFrame(FPKM_count_lists)
+            FPKM_count_lists = FPKM_count_lists.transpose()
+            FPKM_count_lists.columns = cluster_names
+            FPKM_count_lists.index = adata.var_names
+            FPKM_count_lists["average"] = FPKM_count_lists.mean(axis=1)
+            FPKM_count_lists = FPKM_count_lists.astype("int")
+
+            count_file = str(outputdir +str(cond_name)+"_"+str(cluster_id)+"_RNA_Counts.tsv")
+            CPM_file = str(outputdir +str(cond_name)+"_"+str(cluster_id)+ "_TPM.tsv")
+            sample_file = str(outputdir +str(cond_name)+"_"+str(cluster_id)+ "_samples.tsv")
+            rna_count_lists.to_csv(count_file, sep="\t", index=True, index_label=False)
+            FPKM_count_lists.to_csv(CPM_file, sep="\t", index=True, index_label=False)
+            sample_lists.to_csv(sample_file, sep="\t", index=False, index_label=False)
+    
+    # Import the intermediate results back
+    for cluster_id in ["merged_batch","full_batch"]:
+        print("Running file merge with: "+str(cluster_id))
+            
+        # Merge the counts from the individual objects lists
+        df_1 = pd.read_csv(str(outputdir +"cond1"+"_"+str(cluster_id)+"_RNA_Counts.tsv"),sep="\t")
+        del df_1["average"]
+        df_2 = pd.read_csv(str(outputdir +"cond2"+"_"+str(cluster_id)+"_RNA_Counts.tsv"),sep="\t")
+        del df_2["average"]
+        
+        df_1_samples=pd.read_csv(str(outputdir +"cond1"+"_"+str(cluster_id)+ "_samples.tsv"),sep="\t")
+        df_2_samples=pd.read_csv(str(outputdir +"cond2"+"_"+str(cluster_id)+ "_samples.tsv"),sep="\t")
+
+        # Save merged count files
+        merged_df = pd.merge(df_1, df_2, left_index=True, right_index=True, how='inner')
+        merged_df.index.name='gene'
+        
+        print("Saving merged count files for "+str(cluster_id))
+        merged_file= str(outputdir+str(cluster_id)+"_merged.tsv")
+        merged_df.to_csv(merged_file, sep="\t", index=True, index_label="gene")
+        
+        # Save merged sample files
+        cond_samples = pd.concat([df_1_samples,df_2_samples])
+        
+        print("Saving sample files for "+str(cluster_id))
+        cond_samples_file= str(outputdir+str(cluster_id)+"_samples.tsv")
+        cond_samples.to_csv(cond_samples_file, sep="\t", index=False)
+        print("Finished constructing contrast between conditions for: "+str(cluster_id))
+    
+    return
 
 
 def predpars():
