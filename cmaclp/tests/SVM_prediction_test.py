@@ -30,9 +30,10 @@ from cmaclp.SVM_prediction import performpars
 
 query = "data/small_test.h5ad"
 
-reference = "data/small_cma_meta_atlas.h5ad"
-labels = "data/small_training_labels_meta.csv"
+reference = "data/cma_meta_atlas.h5ad"
+labels = "data/training_labels_meta.csv"
 outdir_unit = "test_output_unit/"
+colord_tsv= "data/colord.tsv"
 
 ### UNIT TESTS
 
@@ -43,7 +44,21 @@ def test_SVM_prediction():
     assert os.path.exists(f'{outdir_unit}SVM_Pred_Labels.csv') == 1
 
 
+def test_SVM_prediction_meta_atlas():
+    SVM_prediction(query_H5AD=query,meta_atlas=True,
+      OutputDir=outdir_unit)
+
+    assert os.path.exists(f'{outdir_unit}SVM_Pred_Labels.csv') == 1
+
+
 def test_SVMrej_prediction():
+    SVM_prediction(reference_H5AD=reference,query_H5AD=query,
+      LabelsPathTrain=labels,OutputDir=outdir_unit,rejected=True)
+
+    assert os.path.exists(f'{outdir_unit}SVMrej_Pred_Labels.csv') == 1
+
+
+def test_SVM_prediction_meta_atlas():
     SVM_prediction(reference_H5AD=reference,query_H5AD=query,
       LabelsPathTrain=labels,OutputDir=outdir_unit,rejected=True)
 
@@ -52,7 +67,7 @@ def test_SVMrej_prediction():
     
 def test_SVM_import():
 
-    SVM_import(query_H5AD=query,OutputDir=outdir_unit,SVM_type="SVM",replicates="time_point",meta_atlas=True)
+    SVM_import(query_H5AD=query,OutputDir=outdir_unit,SVM_type="SVM",replicates="time_point")
 
     assert os.path.exists(f'figures/Density_prediction_scores.pdf') == 1
     assert os.path.exists(f'SVM_predicted.h5ad') == 1
@@ -65,6 +80,12 @@ def test_SVM_plot_import():
 
     assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
 
+def test_SVM_plot_import_meta_atlas():
+
+    SVM_import(query_H5AD=query,OutputDir=outdir_unit,colord=colord_tsv,
+      SVM_type="SVM",replicates="time_point",show_bar=True,meta_atlas=True)
+
+    assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
       
 def test_SVM_pseudobulk():
 
