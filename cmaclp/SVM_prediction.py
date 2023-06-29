@@ -355,7 +355,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     label_encoder = LabelEncoder()
     
-    y = label_encoder.fit_transform(labels["x"].tolist())
+    y = label_encoder.fit_transform(labels.iloc[:,0].tolist())
 
     # Generate a dictionary to map values to strings
     res = dict(zip(label_encoder.inverse_transform(y),y))
