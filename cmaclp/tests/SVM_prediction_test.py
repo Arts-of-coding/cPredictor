@@ -95,6 +95,15 @@ def test_SVM_pseudobulk():
     assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
 
 
+def test_SVMrej_pseudobulk():
+
+    SVM_pseudobulk(condition_1=reference, condition_1_batch="donors", 
+      condition_2="SVM_predicted.h5ad", condition_2_batch="batch", 
+      Labels_1=labels,SVM_type="SVMrej")
+    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
+    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
+
+
 def test_SVMrej_performance():
 
     SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir_unit)
@@ -157,3 +166,17 @@ def test_CLI_SVM_import_plots():
                    text=True)
     assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
 
+    
+def test_CLI_SVM_pseudobulk():
+
+    command_to_be_executed = ['SVM_pseudobulk',
+                              '--condition_1', str(reference),
+                              '--condition_1_batch', str("donors"),
+                              '--condition_2', str("SVM_predicted.h5ad"),
+                              '--condition_2_batch', str("batch"),
+                              '--Labels_1', str(labels)]
+
+    subprocess.run(command_to_be_executed, shell=False, timeout=None,
+                   text=True)
+    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
+    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1

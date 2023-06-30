@@ -469,7 +469,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     return F1score,acc_score,prec_score
 
 
-def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50):
+def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
     '''
     Produces pseudobulk RNA-seq count files and sample files of either technical or biological replicates.
     It produces pseudobulk of all labels from LabelsPath against predicted labels after SVMprediction.
@@ -520,12 +520,10 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
     cond_1.obs["merged_batch"]=cond_1.obs["merged"]+"."+cond_1.obs["batch"].astype(str)
     cond_1.obs["full_batch"]=cond_1.obs["condition"]+"."+cond_1.obs["batch"].astype(str)
 
-    ######################################################
-    # This will be in the actual function
     print("Constructing batches for condition 2")
-    
-    #cond_2=sc.read_h5ad("SVM_predicted.h5ad")
-    cond_2_label="SVM_predicted"
+
+    # Uses the specified SVM_type for predicted cond_2
+    cond_2_label=f'{SVM_type}_predicted'
     batch=condition_2_batch
 
     cond_2.obs["condition"]="cond2"
@@ -716,7 +714,7 @@ def importpars():
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
     parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--replicates", type=str, help="Replicates")
-    parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta atlas data")
+    parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
 
     args = parser.parse_args()
 
@@ -729,6 +727,32 @@ def importpars():
         args.meta_atlas,
         args.show_bar)
 
+# ADD 
+
+def pseudopars():
+
+    parser = argparse.ArgumentParser(description="Performs individual and joined pseudobulk on two H5AD objects")
+    parser.add_argument("--condition_1", type=str, help="Path to meta-atlas or other H5AD file")
+    parser.add_argument("--condition_1_batch", type=str, help="Technical, biological or other replicate column in condition_1.obs")
+    parser.add_argument("--condition_2", type=str, help="Path to H5AD file with SVM predictions")
+    parser.add_argument("--condition_2_batch", type=str, help="Technical, biological or other replicate column in condition_2.obs")
+    parser.add_argument("--Labels_1", type=str, help="Label path for the meta-atlas (LabelsPathTrain) or condition_1.obs column with names")
+    parser.add_argument('--OutputDir', dest='pseudobulk_output/', action='store_true', help='Directory where pseudobulk results are outputted')
+    parser.add_argument("--min_cells", type=float, default=50, help="Minimal amount of cells for each condition and replicate")
+    parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
+    
+    args = parser.parse_args()
+
+    SVM_pseudobulk(
+        args.condition_1,
+        args.condition_1_batch,
+        args.condition_2,
+        args.condition_2_batch,
+        args.Labels_1,
+        args.OutputDir,
+        args.min_cells,
+        args.SVM_type)
+
 
 if __name__ == '__predpars__':
     predpars()
@@ -739,5 +763,9 @@ if __name__ == '__performpars__':
 
 
 if __name__ == '__importpars__':
+    importpars()
+
+
+if __name__ == '__pseudopars__':
     importpars()
 

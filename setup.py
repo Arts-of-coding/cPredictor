@@ -16,7 +16,8 @@ setup(
   entry_points={
     'console_scripts': ['SVM_prediction=cmaclp.SVM_prediction:predpars',
                         'SVM_import=cmaclp.SVM_prediction:importpars',
-                        'SVM_performance=cmaclp.SVM_prediction:performpars'
+                        'SVM_performance=cmaclp.SVM_prediction:performpars',
+                        'SVM_pseudobulk=cmaclp.SVM_prediction:pseudopars'
     ]
   },
   install_requires=['setuptools<=57.5.0', 'wheel', 'python-build',
