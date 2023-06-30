@@ -61,7 +61,7 @@ jobs:
       run: pip wheel --no-deps -w dist .
       
     - name: Creating needed directories
-      run: mkdir -p dist_artifacts data figures
+      run: mkdir -p dist_artifacts data figures test_output_unit
       
     - name: Copying artifact to artifact dir
       run: cp dist/*.whl dist_artifacts/
@@ -78,18 +78,26 @@ jobs:
       
     # Download data into own directory
     - name: Download labels  
-      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
-
-    - name: Download training 
-      run: curl -o data/small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
+      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/8091117/files/small_training_labels_meta.csv?download=1
 
     - name: Download test
-      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
-      
-    # Pre-process 
-    # Running unit tests
-    - name: Running unit tests    
-      run: pytest cmaclp/tests/cmaclp_test.py --cov
+      run: curl -o data/small_test.h5ad https://zenodo.org/record/7970737/files/small_test.h5ad?download=1
+
+    - name: Download training
+      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/8091117/files/small_cma_meta_atlas.h5ad?download=1
+
+    - name: Download dictionary of the cornea meta-atlas with colors
+      run: curl -o data/colord.tsv https://zenodo.org/record/8096135/files/colord.tsv?download=1
+
+    - name: Run unit tests
+      run: |
+        pytest cmaclp/tests/SVM_prediction_test.py -vvv --disable-pytest-warnings \
+        --cov=./ --cov-report=xml
+
+    - name: Upload code coverage ☂️
+      uses: paambaati/codeclimate-action@v4.0.0
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
 
   cd:
     # Only run this job if the "ci" job passes
@@ -181,10 +189,10 @@ jobs:
 
     # Download data into own directory
     - name: Download labels  
-      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/7970737/files/training_labels_meta.csv?download=1
+      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/8091117/files/training_labels_meta.csv?download=1
 
     - name: Download CV data
-      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/7970737/files/cma_meta_atlas.h5ad?download=1
+      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/8091117/files/cma_meta_atlas.h5ad?download=1
 
     - name: Download ML tracking packages
       run: pip install dagshub mlflow

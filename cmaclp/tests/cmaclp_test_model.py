@@ -27,7 +27,7 @@ import git
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
-cmaclp_version = "0.1.0"
+cmaclp_version = "0.1.1"
 
 metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
