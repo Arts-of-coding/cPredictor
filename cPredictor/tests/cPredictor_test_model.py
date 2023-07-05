@@ -20,7 +20,7 @@ from scanpy import read_h5ad
 from importlib.resources import files
 
 print("Import performance function")
-from cmaclp.SVM_prediction import SVM_performance
+from cPredictor.SVM_prediction import SVM_performance
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 import git
 
