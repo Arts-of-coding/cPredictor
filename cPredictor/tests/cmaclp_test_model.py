@@ -27,7 +27,7 @@ import git
 reference = "data/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
-cmaclp_version = "0.1.1"
+cPredictor_version = "0.1.1"
 
 metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
@@ -37,7 +37,7 @@ DAGSHUB_USER_NAME = 'Arts-of-coding'
 DAGSHUB_TOKEN =  os.environ['DH_key']
 DAGSHUB_REPO_OWNER = 'Arts-of-coding'
 MLFLOW_EXPERIMENT_NAME = 'Cornea'
-DAGSHUB_REPO_NAME='cmaclp'
+DAGSHUB_REPO_NAME='cPredictor'
 Upload_type="GHA"
 SVM_model="SVMrej"
 
@@ -61,7 +61,7 @@ except:
     mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
 mlflow.start_run(run_name=str(f'{MLFLOW_EXPERIMENT_NAME}_full_{Upload_type}'),experiment_id=None,
-                 tags={"version": str(cmaclp_version),"model": str(SVM_model)})
+                 tags={"version": str(cPredictor_version),"model": str(SVM_model)})
 mlflow.log_metric("weighted_F1_score", metrics[0])
 mlflow.log_metric("weighted_accuracy_score", metrics[1])
 mlflow.log_metric("weighted_precision_score", metrics[2])

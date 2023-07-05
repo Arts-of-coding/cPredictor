@@ -6,7 +6,6 @@ import pandas as pd
 import scanpy as sc
 import time as tm
 import seaborn as sns
-#import cmaclp
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
@@ -20,13 +19,13 @@ from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 
 # Import standalone functions for unit tests
-from cmaclp.SVM_prediction import SVM_prediction
-from cmaclp.SVM_prediction import SVM_import
-from cmaclp.SVM_prediction import SVM_pseudobulk
-from cmaclp.SVM_prediction import SVM_performance
-from cmaclp.SVM_prediction import predpars
-from cmaclp.SVM_prediction import importpars
-from cmaclp.SVM_prediction import performpars
+from cPredictor.SVM_prediction import SVM_prediction
+from cPredictor.SVM_prediction import SVM_import
+from cPredictor.SVM_prediction import SVM_pseudobulk
+from cPredictor.SVM_prediction import SVM_performance
+from cPredictor.SVM_prediction import predpars
+from cPredictor.SVM_prediction import importpars
+from cPredictor.SVM_prediction import performpars
 
 query = "data/small_test.h5ad"
 

@@ -1,7 +1,7 @@
 [project]
-name = "cmaclp"
+name = "cPredictor"
 version="0.1.1"
-description = "Corneal meta-atlas command line predictor"
+description = "Cell command line predictor"
 dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
