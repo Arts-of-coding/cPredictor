@@ -22,7 +22,7 @@ from statistics import mean
 from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 
-def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
+def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
     run baseline classifier: SVM
     Wrapper script to run an SVM classifier with a linear kernel on a benchmark dataset with 5-fold cross validation,
@@ -31,12 +31,12 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
     Parameters:
     reference_H5AD, query_H5AD : H5AD files that produce training and testing data,
         cells-genes matrix with cell unique barcodes as row names and gene names as column names.
-    LabelsPathTrain : Cell population annotations file path matching the training data (.csv).
+    LabelsPath : Cell population annotations file path matching the training data (.csv).
     OutputDir : Output directory defining the path of the exported file.
     rejected: If the flag is added, then the SVMrejected option is chosen. Default: False.
     Threshold_rej : Threshold used when rejecting the cells, default is 0.7.
     meta_atlas : If the flag is added the predictions will use meta-atlas data.
-    meaning that reference_H5AD and LabelsPathTrain do not need to be specified.
+    meaning that reference_H5AD and LabelsPath do not need to be specified.
     '''
     print("Reading in the reference and query H5AD objects")
     
@@ -90,9 +90,9 @@ def SVM_prediction(reference_H5AD, query_H5AD, LabelsPathTrain, OutputDir, rejec
     
     # If meta_atlas=True it will read the training_labels
     if meta_atlas is True:
-        LabelsPathTrain = 'data/training_labels_meta.csv'
+        LabelsPath = 'data/training_labels_meta.csv'
     
-    labels_train = pd.read_csv(LabelsPathTrain, header=0,index_col=None, sep=',')
+    labels_train = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',')
         
     # Set threshold for rejecting cells
     if rejected is True:
@@ -660,7 +660,7 @@ def predpars():
     # Add arguments
     parser.add_argument('--reference_H5AD', type=str, help='Path to reference H5AD file')
     parser.add_argument('--query_H5AD', type=str, help='Path to query H5AD file')
-    parser.add_argument('--LabelsPathTrain', type=str, help='Path to cell population annotations file')
+    parser.add_argument('--LabelsPath', type=str, help='Path to cell population annotations file')
     parser.add_argument('--OutputDir', type=str, help='Path to output directory')
 
     parser.add_argument('--rejected', dest='rejected', action='store_true', help='Use SVMrejected option')
@@ -675,10 +675,10 @@ def predpars():
         os.makedirs(args.OutputDir)
 
     # Call the svm_prediction function with the parsed arguments
-    SVM_prediction(
+    SVM_predict(
         args.reference_H5AD,
         args.query_H5AD,
-        args.LabelsPathTrain,
+        args.LabelsPath,
         args.OutputDir,
         args.rejected,
         args.Threshold_rej,
@@ -736,7 +736,7 @@ def pseudopars():
     parser.add_argument("--condition_1_batch", type=str, help="Technical, biological or other replicate column in condition_1.obs")
     parser.add_argument("--condition_2", type=str, help="Path to H5AD file with SVM predictions")
     parser.add_argument("--condition_2_batch", type=str, help="Technical, biological or other replicate column in condition_2.obs")
-    parser.add_argument("--Labels_1", type=str, help="Label path for the meta-atlas (LabelsPathTrain) or condition_1.obs column with names")
+    parser.add_argument("--Labels_1", type=str, help="Label path for the meta-atlas (LabelsPath) or condition_1.obs column with names")
     parser.add_argument('--OutputDir', dest='pseudobulk_output/', action='store_true', help='Directory where pseudobulk results are outputted')
     parser.add_argument("--min_cells", type=float, default=50, help="Minimal amount of cells for each condition and replicate")
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
@@ -767,5 +767,5 @@ if __name__ == '__importpars__':
 
 
 if __name__ == '__pseudopars__':
-    importpars()
+    pseudopars()
 

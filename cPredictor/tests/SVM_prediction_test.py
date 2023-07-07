@@ -19,7 +19,7 @@ from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 
 # Import standalone functions for unit tests
-from cPredictor.SVM_prediction import SVM_prediction
+from cPredictor.SVM_prediction import SVM_predict
 from cPredictor.SVM_prediction import SVM_import
 from cPredictor.SVM_prediction import SVM_pseudobulk
 from cPredictor.SVM_prediction import SVM_performance
@@ -36,30 +36,30 @@ colord_tsv= "data/colord.tsv"
 
 ### UNIT TESTS
 
-def test_SVM_prediction():
-    SVM_prediction(reference_H5AD=reference,query_H5AD=query,
-      LabelsPathTrain=labels,OutputDir=outdir_unit)
+def test_SVM_predict():
+    SVM_predict(reference_H5AD=reference,query_H5AD=query,
+      LabelsPath=labels,OutputDir=outdir_unit)
 
     assert os.path.exists(f'{outdir_unit}SVM_Pred_Labels.csv') == 1
 
 
-def test_SVM_prediction_meta_atlas():
-    SVM_prediction(query_H5AD=query,meta_atlas=True,
+def test_SVM_predict_meta_atlas():
+    SVM_predict(query_H5AD=query,meta_atlas=True,
       OutputDir=outdir_unit)
 
     assert os.path.exists(f'{outdir_unit}SVM_Pred_Labels.csv') == 1
 
 
-def test_SVMrej_prediction():
-    SVM_prediction(reference_H5AD=reference,query_H5AD=query,
-      LabelsPathTrain=labels,OutputDir=outdir_unit,rejected=True)
+def test_SVMrej_predict():
+    SVM_predict(reference_H5AD=reference,query_H5AD=query,
+      LabelsPath=labels,OutputDir=outdir_unit,rejected=True)
 
     assert os.path.exists(f'{outdir_unit}SVMrej_Pred_Labels.csv') == 1
 
 
-def test_SVM_prediction_meta_atlas():
-    SVM_prediction(reference_H5AD=reference,query_H5AD=query,
-      LabelsPathTrain=labels,OutputDir=outdir_unit,rejected=True)
+def test_SVM_predict_meta_atlas():
+    SVM_predict(reference_H5AD=reference,query_H5AD=query,
+      LabelsPath=labels,OutputDir=outdir_unit,rejected=True)
 
     assert os.path.exists(f'{outdir_unit}SVMrej_Pred_Labels.csv') == 1
 
@@ -111,12 +111,12 @@ def test_SVMrej_performance():
 ### END-TO-END
 outdir = "test_output_end_to_end/"
 
-def test_CLI_SVM_prediction():
+def test_CLI_SVM_predict():
 
-    command_to_be_executed = ['SVM_prediction',
+    command_to_be_executed = ['SVM_predict',
                               '--reference_H5AD', str(reference),
                               '--query_H5AD', str(query),
-                              '--LabelsPathTrain', str(labels),
+                              '--LabelsPath', str(labels),
                               '--OutputDir', str(outdir)]
 
     subprocess.run(command_to_be_executed, shell=False, timeout=None,
@@ -124,12 +124,12 @@ def test_CLI_SVM_prediction():
     assert os.path.exists(f'{outdir}SVM_Pred_Labels.csv') == 1
 
 
-def test_CLI_SVMrej_prediction():
+def test_CLI_SVMrej_predict():
 
-    command_to_be_executed = ['SVM_prediction',
+    command_to_be_executed = ['SVM_predict',
                               '--reference_H5AD', str(reference),
                               '--query_H5AD', str(query),
-                              '--LabelsPathTrain', str(labels),
+                              '--LabelsPath', str(labels),
                               '--OutputDir', str(outdir),
                               '--rejected']
 

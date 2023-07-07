@@ -1,6 +1,6 @@
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
-from .SVM_prediction import SVM_prediction
+from .SVM_prediction import SVM_predict
 from .SVM_prediction import SVM_import
 from .SVM_prediction import SVM_performance
 from .SVM_prediction import SVM_pseudobulk
