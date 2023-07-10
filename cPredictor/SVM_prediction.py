@@ -12,6 +12,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
@@ -110,7 +111,13 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     # normalise data
     data_train = np.log1p(data_train)
     data_test = np.log1p(data_test)  
-        
+
+    print("Scaling the training and testing data")
+    # Test if scaling the data for perhaps improving performance
+    scaler = StandardScaler()
+    data_train = scaler.fit_transform(data_train)
+    data_test = scaler.fit_transform(data_test)
+    
     Classifier = LinearSVC()
     pred = []
     
