@@ -9,6 +9,7 @@ import seaborn as sns
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import StandardScaler
 from scanpy import read_h5ad
 from importlib_resources import files
 import subprocess
