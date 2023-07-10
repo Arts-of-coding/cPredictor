@@ -49,7 +49,14 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
 
     # Load in the test data
     testing=read_h5ad(query_H5AD)
- 
+
+    # Checks if the test data contains a raw data slot and sets it as the count value
+    try:
+        testing=testing.raw.to_adata()
+    except AttributeError:
+        print("Query object does not contain raw data, using sparce matrix from adata.X")
+        print("Please manually check if this sparce matrix contains actual raw counts")
+
     print("Generating training and testing matrices from the H5AD objects")
     
     # training data
