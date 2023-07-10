@@ -719,8 +719,8 @@ def importpars():
     parser.add_argument("--query_H5AD", type=str, help="Path to query H5AD file")
     parser.add_argument("--OutputDir", type=str, help="Output directory path")
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
-    parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--replicates", type=str, help="Replicates")
+    parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
     parser.add_argument("--show_bar", dest="show_bar", action="store_true", help="Plot barplot with SVM labels over specified replicates")
 
@@ -730,12 +730,11 @@ def importpars():
         args.query_H5AD,
         args.OutputDir,
         args.SVM_type,
-        args.colord,
         args.replicates,
+        args.colord,
         args.meta_atlas,
         args.show_bar)
-
-# ADD 
+    
 
 def pseudopars():
 
