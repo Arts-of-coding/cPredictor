@@ -715,6 +715,7 @@ def importpars():
     parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--replicates", type=str, help="Replicates")
     parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
+    parser.add_argument("--show_bar", dest="show_bar", action="store_true", help="Plot barplot with SVM labels over specified replicates")
 
     args = parser.parse_args()
 
