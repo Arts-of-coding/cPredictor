@@ -12,7 +12,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
@@ -113,8 +113,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     data_test = np.log1p(data_test)  
 
     print("Scaling the training and testing data")
-    # Test if scaling the data for perhaps improving performance
-    scaler = StandardScaler()
+    scaler = MinMaxScaler()
     data_train = scaler.fit_transform(data_train)
     data_test = scaler.fit_transform(data_test)
     
@@ -130,7 +129,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         predicted = clf.predict(data_test)
         prob = np.max(clf.predict_proba(data_test), axis = 1)
         unlabeled = np.where(prob < Threshold)
-        predicted[unlabeled] = 'Unknown'
+        predicted[unlabeled] = 'Unlabeled'
         pred.extend(predicted)
         probability.extend(prob)
         pred = pd.DataFrame(pred)
@@ -175,31 +174,24 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         if file.endswith('.csv'):
             if 'rej' not in file:
                 filedir= OutputDir+file
-                #print(filedir)
-                influence_data= pd.read_csv(filedir,sep=',',index_col=0)
-                #print(influence_data)
-                influence_data=influence_data.index.tolist()
-                adata.obs["SVM_predicted"]=influence_data
+                SVM_output_dir= pd.read_csv(filedir,sep=',',index_col=0)
+                SVM_output_dir=SVM_output_dir.index.tolist()
+                adata.obs["SVM_predicted"]=SVM_output_dir
             if 'rej_Pred' in file:
                 filedir= OutputDir+file
-                #print(filedir)
-                influence_data= pd.read_csv(filedir,sep=',',index_col=0)
-                #print(influence_data)
-                influence_data=influence_data.index.tolist()
-                adata.obs["SVMrej_predicted"]=influence_data
+                SVM_output_dir= pd.read_csv(filedir,sep=',',index_col=0)
+                SVM_output_dir=SVM_output_dir.index.tolist()
+                adata.obs["SVMrej_predicted"]=SVM_output_dir
             if 'rej_Prob' in file:
                 filedir= OutputDir+file
-                #print(filedir)
-                influence_data= pd.read_csv(filedir,sep=',',index_col=0)
-                #print(influence_data)
-                influence_data=influence_data.index.tolist()
-                adata.obs["SVMrej_predicted_prob"]=influence_data
+                SVM_output_dir= pd.read_csv(filedir,sep=',',index_col=0)
+                SVM_output_dir=SVM_output_dir.index.tolist()
+                adata.obs["SVMrej_predicted_prob"]=SVM_output_dir
 
     # Set category colors:
     if meta_atlas is True and colord is not None:
         df_category_colors=pd.read_csv(colord, header=None,index_col=False, sep='\t')
         category_colors = dict(zip(df_category_colors.iloc[:,0], df_category_colors.iloc[:,1]))
-        print(category_colors)
         if SVM_key == "SVMrej_predicted":
           category_colors["Unlabeled"]= "#808080"
                     
@@ -254,8 +246,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
               ord_list = [key for key in palette]
               
             if SVM_type == 'SVMrej':
-              colordkeys_list = [key for key in palette]
-              ord_list=colordkeys_list.append("Unlabeled")
+              ord_list = [key for key in palette]
             
             # Sorts the df on the longer ordered list
             def sort_small_list(long_list, small_list):
@@ -263,7 +254,6 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
               return sorted_list
             
             sorter = sort_small_list(ord_list, df.columns.tolist())
-            #sorter=sorted(df.columns, key=ord_list.get)
             
             # Retrieve the color codes from the sorted list
             lstval = [palette[key] for key in sorter]
@@ -310,7 +300,6 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         plt.title('Stacked Density Plots of Prediction Certainty Scores by Cell State')
 
         # Add a legend
-        #fig.legend(loc=7,title="Cell states and median predictions scores")
         plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
         # Saving the density plot
@@ -349,6 +338,10 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     X = data
     del data
 
+    print("Scaling the data")
+    scaler = MinMaxScaler()
+    X = scaler.fit_transform(X)
+    
     label_encoder = LabelEncoder()
     
     y = label_encoder.fit_transform(labels.iloc[:,0].tolist())
@@ -368,15 +361,11 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     # Iterate over each fold and split the data
     print("Generate indices for train and test")
     for train_index, test_index in kfold.split(X):
-        #X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
         # Store the indices of the training and test sets for each fold
         train_indices.append(list(train_index))
         test_indices.append(list(test_index))
-        
-    #train_indices = list(train_indices)
-    #test_indices = list(test_indices)
 
     # Run the SVM model
     test_ind=test_indices
@@ -511,11 +500,13 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
       label_data=label_data.index.tolist()
       cond_1.obs["meta_atlas"]=label_data
       cond_1_label="meta_atlas"
+
     # Then tries to read in Labels_1 as a string in obs
     except (TypeError, FileNotFoundError) as error:
       try:
         cond_1_label=str(Labels_1)
         cond_1.obs[cond_1_label]
+
     # If no key if found a valid key must be entered
       except KeyError:
         raise ValueError('Please provide a valid name for labels in Labels_1')
@@ -524,6 +515,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
     cond_1.obs["condition"]="cond1"
 
     print("Constructing batches for condition 1")
+
     # Add extra index to the ref object:
     cond_1.obs["batch"] = cond_1.obs[condition_1_batch]
 
@@ -563,7 +555,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
 
         adata = cond.copy()
 
-        # extract names of genes
+        # Extract names of genes
         try:
             adata.var_names=adata.var["_index"].tolist()
         except KeyError:

@@ -1,4 +1,4 @@
-__version__ = "0.1.3"
+__version__ = "0.2.0"
 
 from .SVM_prediction import SVM_predict
 from .SVM_prediction import SVM_import
