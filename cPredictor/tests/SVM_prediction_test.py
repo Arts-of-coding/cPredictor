@@ -9,14 +9,13 @@ import seaborn as sns
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import MinMaxScaler
 from scanpy import read_h5ad
 from importlib_resources import files
 import subprocess
 import re
 import matplotlib.pyplot as plt
 from statistics import mean
-from scipy.stats import pearsonr
-from scipy.stats import spearmanr
 
 # Import standalone functions for unit tests
 from cPredictor.SVM_prediction import SVM_predict
