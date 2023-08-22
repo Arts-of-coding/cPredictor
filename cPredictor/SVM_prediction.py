@@ -86,8 +86,8 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     print("Number of genes remaining after unifying training and testing matrices: "+str(len(matrix_test.columns)))
     
     # Convert the ordered dataframes back to nparrays
-    data_train = matrix_train.to_numpy()
-    data_test = matrix_test.to_numpy()
+    data_train = matrix_train.to_numpy(dtype="float16")
+    data_test = matrix_test.to_numpy(dtype="float16")
     
     # Delete large objects from memory
     del matrix_train, matrix_test, training, testing
@@ -105,8 +105,8 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     print("Log normalizing the training and testing data")
     
     # normalise data
-    data_train = np.log1p(data_train)
-    data_test = np.log1p(data_test)  
+    np.log1p(data_train,out=data_train)
+    np.log1p(data_test,out=data_test)  
 
     print("Scaling the training and testing data")
     scaler = MinMaxScaler()
