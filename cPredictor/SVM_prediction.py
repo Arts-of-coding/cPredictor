@@ -86,15 +86,11 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     print("Number of genes remaining after unifying training and testing matrices: "+str(len(matrix_test.columns)))
     
     # Convert the ordered dataframes back to nparrays
-    matrix_train2 = matrix_train.to_numpy()
-    matrix_test2 = matrix_test.to_numpy()
+    data_train = matrix_train.to_numpy()
+    data_test = matrix_test.to_numpy()
     
     # Delete large objects from memory
     del matrix_train, matrix_test, training, testing
-    
-    # read the data
-    data_train = matrix_train2
-    data_test = matrix_test2
     
     # If meta_atlas=True it will read the training_labels
     if meta_atlas is True:
