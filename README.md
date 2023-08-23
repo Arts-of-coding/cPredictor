@@ -6,6 +6,14 @@
 # cPredictor
 This repository defines a command-line tool to predict (cPredictor) datasets according to a cell meta-atlases. At the present time only the meta-atlas for the cornea has been implemented.
 
+## Conda and pip
+If you have not used Bioconda before, first set up the necessary channels (in this order!). 
+You only have to do this once.
+```
+$ conda config --add channels defaults
+$ conda config --add channels bioconda
+$ conda config --add channels conda-forge
+```
 
 Install cPredictor into a conda environment and install with PyPI:
 ```
@@ -20,12 +28,21 @@ $ SVM_predict --help
 $ SVM_import --help
 $ SVM_pseudobulk --help
 ```
-
+## Docker
 Alternatively you can run the package containerized through docker:
 ```
 $ docker pull artsofcoding/cpredictor:latest
 $ docker tag artsofcoding/cpredictor:latest cpredictor
-$ docker run cpredictor SVM_performance --help
+$ docker run -it --name cpredictor -p 8080:80 -v {path_to_H5AD_object}:/data cpredictor
 ```
+In the activated docker container you can then go to the terminal:
+```
+# cd /data
+# SVM_predict --query_H5AD {H5AD_object}.h5ad --OutputDir {your_output_dir} --meta_atlas
+```
+## Performance with the corneal meta-atlas
+The docker container is able to predict the identity of ~90.000 cells x ~25.000 genes within two hours.
+
+To run the container locally you will need a computer with at least 28 GB of RAM and a 4-core processor.
 
 The documentation will be extended and improved upon in later versions.
