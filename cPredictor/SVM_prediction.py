@@ -98,7 +98,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
             writer.write_table(data_test)
     
     # Delete large objects from memory
-    del matrix_train, matrix_test, training, testing, data_test
+    del matrix_train, matrix_test, training, testing, data_test, training1, df_all
 
     # Run garbage collector
     gc.collect()
