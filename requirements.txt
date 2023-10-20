@@ -9,3 +9,4 @@ scikit-learn
 scanpy>=1.9.1
 importlib-resources
 pytest-cov
+pyarrow
