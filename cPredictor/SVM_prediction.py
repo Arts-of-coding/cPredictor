@@ -92,6 +92,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     data_test = matrix_test.to_numpy(dtype="float16")
 
     # Save test data on-disk for efficient memory data management
+    data_test = pa.Table.from_pandas(pd.DataFrame(data_test))
     with pa.OSFile('data_test.arrow', 'wb') as sink:
         with pa.RecordBatchFileWriter(sink, data_test.schema) as writer:
             writer.write_table(data_test)
