@@ -1,4 +1,5 @@
 import argparse
+import gc
 import os
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
+import pyarrow as pa
 from scanpy import read_h5ad
 from importlib.resources import files
 import re
@@ -88,10 +90,18 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     # Convert the ordered dataframes back to nparrays
     data_train = matrix_train.to_numpy(dtype="float16")
     data_test = matrix_test.to_numpy(dtype="float16")
+
+    # Save test data on-disk for efficient memory data management
+    with pa.OSFile('data_test.arrow', 'wb') as sink:
+        with pa.RecordBatchFileWriter(sink, data_test.schema) as writer:
+            writer.write_table(data_test)
     
     # Delete large objects from memory
-    del matrix_train, matrix_test, training, testing
-    
+    del matrix_train, matrix_test, training, testing, data_test
+
+    # Run garbage collector
+    gc.collect()
+
     # If meta_atlas=True it will read the training_labels
     if meta_atlas is True:
         LabelsPath = 'data/training_labels_meta.csv'
@@ -101,6 +111,11 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     # Set threshold for rejecting cells
     if rejected is True:
         Threshold = Threshold_rej
+
+    # Load in the test data from on disk
+    source = pa.memory_map('data_test.arrow', 'r')
+    data_test = pa.ipc.RecordBatchFileReader(source).read_all()
+    data_test = data_test.to_pandas().to_numpy()
 
     print("Log normalizing the training and testing data")
     
@@ -112,7 +127,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     scaler = MinMaxScaler()
     data_train = scaler.fit_transform(data_train)
     data_test = scaler.fit_transform(data_test)
-    
+
     Classifier = LinearSVC()
     pred = []
     
