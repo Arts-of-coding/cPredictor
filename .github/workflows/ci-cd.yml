@@ -78,16 +78,16 @@ jobs:
       
     # Download data into own directory
     - name: Download labels  
-      run: curl -o data/training_labels_meta.csv https://zenodo.org/record/8096135/files/small_training_labels_meta.csv?download=1
+      run: curl -o data/training_labels_meta.csv https://zenodo.org/records/8096135/files/small_training_labels_meta.csv?download=1
 
     - name: Download test
-      run: curl -o data/small_test.h5ad https://zenodo.org/record/8096135/files/small_test.h5ad?download=1
+      run: curl -o data/small_test.h5ad https://zenodo.org/records/8096135/files/small_test.h5ad?download=1
 
     - name: Download training
-      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/record/8096135/files/small_cma_meta_atlas.h5ad?download=1
+      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/records/8096135/files/small_cma_meta_atlas.h5ad?download=1
 
     - name: Download dictionary of the cornea meta-atlas with colors
-      run: curl -o data/colord.tsv https://zenodo.org/record/8096135/files/colord.tsv?download=1
+      run: curl -o data/colord.tsv https://zenodo.org/records/8096135/files/colord.tsv?download=1
 
     - name: Run unit tests
       run: |
