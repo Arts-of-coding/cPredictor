@@ -113,10 +113,18 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     if rejected is True:
         Threshold = Threshold_rej
 
-    # Load in the test data from on disk
+    # Load in the test data from on disk incrementally
+    chunk_size = 50000
     source = pa.memory_map('data_test.arrow', 'r')
-    data_test = pa.ipc.RecordBatchFileReader(source).read_all()
-    data_test = data_test.to_pandas().to_numpy()
+    data_chunks = []
+    for i in range(0, data_test.num_rows, chunk_size):
+        print(f"loading chunk {i}")
+        start, end = i, min(i + chunk_size, data_test.num_rows)
+        chunk = pa.ipc.RecordBatchFileReader(source, start, end)
+        data_chunks.append(chunk.read())
+
+    data_test = pd.concat(data_chunks)
+    data_test = data_test.to_numpy()
 
     print("Log normalizing the training and testing data")
     
