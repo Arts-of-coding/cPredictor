@@ -1,3 +1,5 @@
+from sklearnex import patch_sklearn 
+patch_sklearn()
 import argparse
 import gc
 import os
