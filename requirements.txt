@@ -1,4 +1,4 @@
-setuptools<=57.5.0
+setuptools>=65.5.1
 wheel
 python-build
 pytest-cov
@@ -9,3 +9,5 @@ scikit-learn
 scanpy>=1.9.1
 importlib-resources
 pytest-cov
+pyarrow
+scikit-learn-intelex
