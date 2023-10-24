@@ -131,7 +131,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     data_train = scaler.fit_transform(data_train)
     data_test = scaler.fit_transform(data_test)
 
-    Classifier = LinearSVC()
+    Classifier = LinearSVC(random_state=42)
     pred = []
     
     if rejected is True:
