@@ -384,7 +384,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     # Run the SVM model
     test_ind=test_indices
     train_ind=train_indices
-    Classifier = LinearSVC()
+    Classifier = LinearSVC(random_state=42)
 
     if SVM_type == "SVMrej":
         clf = CalibratedClassifierCV(Classifier, cv=3)
