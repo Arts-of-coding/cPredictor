@@ -1,4 +1,4 @@
-# `cPredictor` package <img src='man/c_predictor_simple.png' align="right" height="139" />
+# `cPredictor` package <img src='cPredictor/man/c_predictor_simple.png' align="right" height="80" />
 
 [![PyPI version](https://badge.fury.io/py/cPredictor.svg)](https://badge.fury.io/py/cPredictor)
 [![CI/CD](https://github.com/Arts-of-coding/cPredictor/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Arts-of-coding/cPredictor/actions/workflows/ci-cd.yml)
