@@ -125,7 +125,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     data_train = scaler.fit_transform(data_train)
     data_test = scaler.fit_transform(data_test)
 
-    Classifier = LinearSVC(dual=False, random_state=42, class_weight="balanced")
+    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
     pred = []
     
     if rejected is True:
@@ -377,7 +377,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     # Run the SVM model
     test_ind = test_indices
     train_ind = train_indices
-    Classifier = LinearSVC(dual=False, random_state=42, class_weight="balanced")
+    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
 
     if SVM_type == "SVMrej":
         clf = CalibratedClassifierCV(Classifier, cv=3)
