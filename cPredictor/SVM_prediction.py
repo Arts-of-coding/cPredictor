@@ -1,5 +1,3 @@
-from sklearnex import patch_sklearn 
-patch_sklearn()
 import argparse
 import gc
 import os
@@ -10,6 +8,8 @@ import time as tm
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
+from sklearnex import patch_sklearn 
+patch_sklearn()
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
@@ -21,11 +21,6 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 import pyarrow as pa
 from scanpy import read_h5ad
-from importlib.resources import files
-import re
-from statistics import mean
-from scipy.stats import pearsonr
-from scipy.stats import spearmanr
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
@@ -95,9 +90,8 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
 
     # Save test data on-disk for efficient memory data management
     data_test = pa.Table.from_pandas(pd.DataFrame(data_test))
-    with pa.OSFile('data_test.arrow', 'wb') as sink:
-        with pa.RecordBatchFileWriter(sink, data_test.schema) as writer:
-            writer.write_table(data_test)
+    with pa.OSFile('data_test.arrow', 'wb') as sink, pa.RecordBatchFileWriter(sink, data_test.schema) as writer:
+    	writer.write_table(data_test)
     
     # Delete large objects from memory
     del matrix_train, matrix_test, training, testing, data_test, training1, df_all
@@ -162,7 +156,6 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         
         # Save the predicted labels
         pred.to_csv(str(OutputDir) + "SVM_Pred_Labels.csv", index =False)
-
 
 def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_atlas=False, show_bar=False):
     '''
@@ -246,9 +239,9 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
                            for k in obs2_clusters}
         obs2_to_obs1
 
-        for b, l in df:
-            obs2_to_obs1[b][obs1_clusters.index(str(l))] += 1
-            obs1_to_obs2[l][obs2_clusters.index(str(b))] += 1
+        for b, v in df:
+            obs2_to_obs1[b][obs1_clusters.index(str(v))] += 1
+            obs1_to_obs2[v][obs2_clusters.index(str(b))] += 1
 
         df = pd.DataFrame.from_dict(obs2_to_obs1,orient = 'index').reset_index()
         df = df.set_index(["index"])
@@ -258,10 +251,10 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         if meta_atlas is True and colord is not None:
             palette = category_colors
             if SVM_type == 'SVM' :
-              ord_list = [key for key in palette]
+              ord_list = list(palette.keys())
               
             if SVM_type == 'SVMrej':
-              ord_list = [key for key in palette]
+              ord_list = list(palette.keys())
             
             # Sorts the df on the longer ordered list
             def sort_small_list(long_list, small_list):
@@ -326,7 +319,6 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     print("Saving H5AD file")
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
-
 
 def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold=0.7):
     '''
@@ -486,7 +478,6 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     cm.savefig(f"figures/{SVM_type}_cnf_matrix.png")
     return F1score,acc_score,prec_score
 
-
 def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
     '''
     Produces pseudobulk RNA-seq count files and sample files of either technical or biological replicates.
@@ -517,7 +508,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
       cond_1_label="meta_atlas"
 
     # Then tries to read in Labels_1 as a string in obs
-    except (TypeError, FileNotFoundError) as error:
+    except (TypeError, FileNotFoundError):
       try:
         cond_1_label = str(Labels_1)
         cond_1.obs[cond_1_label]
@@ -587,9 +578,9 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
             sample_lists = sample_lists.drop_duplicates()
             sample_lists.rename(columns={ sample_lists.columns[0]: "sample" }, inplace = True)
 
-            rna_count_lists = list()
-            FPKM_count_lists = list()
-            cluster_names = list()
+            rna_count_lists = []
+            FPKM_count_lists = []
+            cluster_names = []
 
             for cluster in adata.obs[cluster_id].astype("category").unique():
 
@@ -615,9 +606,6 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
                     X_clone2 = adata_sel.X.toarray()
                     NumNonZeroElementsByColumn = [X_clone2.sum(0)]
                     FPKM_count_lists += [list(np.array(NumNonZeroElementsByColumn)[0])]
-
-            # Specify the df.index
-            df = adata.T.to_df()
 
             # Generate the count matrix df
             rna_count_lists = pd.DataFrame(rna_count_lists)
@@ -672,7 +660,6 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
         print("Finished constructing contrast between conditions for: "+str(cluster_id))
     
     return
-
 
 def predpars():
     # Create the parser
