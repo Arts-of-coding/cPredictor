@@ -14,7 +14,54 @@ on:
   workflow_dispatch:
 
 jobs:
+  Ruff_linter:
+    # Set up operating system
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    # Docker Hub image that `postgres-job` executes in
+    #container: node:latest
+    # service containers to run with `postgres-job`
+    steps:
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+        
+    - name: Check-out repository
+      uses: actions/checkout@v2
+
+      #- name: Install Python dependencies
+      #  uses: py-actions/py-dependency-install@v4
+        
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        miniconda-version: "latest"
+        channels: bioconda, conda-forge, defaults
+        use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+        auto-update-conda: true
+        auto-activate-base: true
+        
+    - name: Install cPredictor pip
+      run: |
+            echo "begin: PATH=$PATH;"
+
+            conda create -y --name cPredictor pip ruff python=3.9
+
+            conda activate cPredictor || true
+            echo "after conda activate cPredictor: PATH=$PATH;"
+            which cPredictor || true
+            # Use cPredictor in ci-cd workflow
+
+    # Run the ruff linter and ignore the import package error E402
+    - name: Run Ruff linter
+      run: ruff check cPredictor/SVM_prediction.py --line-length 88 --extend-select C4,SIM,TCH,E4,E7,E9,F --ignore E402
+      
   ci:
+    needs: Ruff_linter
     # Set up operating system
     runs-on: ubuntu-latest
     
