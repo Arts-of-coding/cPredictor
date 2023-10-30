@@ -49,13 +49,16 @@ jobs:
       run: |
             echo "begin: PATH=$PATH;"
 
-            conda create -y --name cPredictor pip ruff python=3.9
+            conda create -y --name cPredictor pip python=3.9
 
             conda activate cPredictor || true
             echo "after conda activate cPredictor: PATH=$PATH;"
             which cPredictor || true
             # Use cPredictor in ci-cd workflow
 
+    - name: pip install ruff
+      run: pip install ruff
+      
     # Run the ruff linter and ignore the import package error E402
     - name: Run Ruff linter
       run: ruff check cPredictor/SVM_prediction.py --line-length 88 --extend-select C4,SIM,TCH,E4,E7,E9,F --ignore E402
