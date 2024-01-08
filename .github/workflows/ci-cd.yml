@@ -124,7 +124,7 @@ jobs:
         
     # Test if the created wheel file can be installed
     - name: Install wheel of package into conda env
-      run: pip install --force-reinstall -e dist/*.whl
+      run: pip install dist/*.whl --force-reinstall --no-use-pep517
 
       # Test if a CLI function is able to run
     - name: Check CLI function
