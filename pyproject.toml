@@ -2,7 +2,7 @@
 name = "cPredictor"
 version="0.2.8"
 description = "Cell command line predictor"
-dynamic = ["dependencies"]
+dynamic = ["dependencies","readme","scripts"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
