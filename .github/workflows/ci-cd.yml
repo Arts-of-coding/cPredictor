@@ -121,10 +121,14 @@ jobs:
       with: 
         name: wheel artifact
         path: dist_artifacts/*.whl
-        
+
+    # Update pip
+    - name: Update pip and setuptools
+      run: pip install --upgrade pip setuptools wheel
+
     # Test if the created wheel file can be installed
     - name: Install wheel of package into conda env
-      run: pip install --no-use-pep517 dist/*.whl --force-reinstall
+      run: pip install dist/*.whl --force-reinstall
 
       # Test if a CLI function is able to run
     - name: Check CLI function
