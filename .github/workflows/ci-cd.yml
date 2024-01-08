@@ -26,6 +26,7 @@ jobs:
     #container: node:latest
     # service containers to run with `postgres-job`
     steps:
+
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
@@ -76,6 +77,14 @@ jobs:
     #container: node:latest
     # service containers to run with `postgres-job`
     steps:
+
+    - name: Cleanup build folder
+      run: |
+        ls -la ./
+        rm -rf ./* || true
+        rm -rf ./.??* || true
+        ls -la ./
+    
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
@@ -169,6 +178,14 @@ jobs:
 
     # Define job steps
     steps:
+
+    - name: Cleanup build folder
+      run: |
+        ls -la ./
+        rm -rf ./* || true
+        rm -rf ./.??* || true
+        ls -la ./
+        
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
