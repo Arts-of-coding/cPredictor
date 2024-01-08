@@ -125,6 +125,10 @@ jobs:
     # Test if the created wheel file can be installed
     - name: Install wheel of package into conda env
       run: pip install dist/*.whl --force-reinstall
+
+      # Test if a CLI function is able to run
+    - name: Check CLI function
+      run: SVM_predict --help
       
     # Download data into own directory
     - name: Download labels  
