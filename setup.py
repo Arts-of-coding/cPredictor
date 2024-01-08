@@ -20,7 +20,7 @@ setup(
                         'SVM_pseudobulk=cPredictor.SVM_prediction:pseudopars'
     ]
   },
-  install_requires=['setuptools>=65.5.1', 'wheel', 'python-build',
+  install_requires=['setuptools=68.2.2', 'wheel', 'python-build',
                     'h5py', 'numpy>=1.23.3, <1.24', 'pandas>=1.4.4',
                     'scikit-learn', 'scanpy>=1.9.1',
                     'importlib-resources', 'pytest-cov'],
