@@ -126,10 +126,10 @@ jobs:
       run: cp dist/*.whl dist_artifacts/
   
     - name: Use the Upload Artifact GitHub Action
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with: 
-        name: wheel artifact
-        path: dist_artifacts/*.whl
+        name: my-artifact
+        path: dist_artifacts/
 
     # Update pip
     - name: Update pip and setuptools
@@ -195,9 +195,9 @@ jobs:
       run: mkdir -p dist
 
     - name: Download artifact
-      uses: actions/download-artifact@master
+      uses: actions/download-artifact@v4
       with:
-        name: wheel artifact
+        name: my-artifact
         path: dist
   
     - name: Publish to PyPI
@@ -255,6 +255,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
+        name: my-artifact
         path: dist
         
     # Installs from wheel if ci is finished
