@@ -253,9 +253,8 @@ jobs:
       run: mkdir -p dist figures data test_output
 
     - name: Download artifact
-      uses: actions/download-artifact@master
+      uses: actions/download-artifact@v4
       with:
-        name: wheel artifact
         path: dist
         
     # Installs from wheel if ci is finished
