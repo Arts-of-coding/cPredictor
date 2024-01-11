@@ -1,4 +1,4 @@
-setuptools>=65.5.1
+setuptools==68.2.2 # old: setuptools>=65.5.1
 wheel
 python-build
 pytest-cov

@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
   name='cPredictor',
-  version='0.2.8',
+  version='0.2.9',
   # To provide executable scripts, use entry points in preference to the
   # "scripts" keyword. Entry points provide cross-platform support and allow
   # pip to create the appropriate form of executable for the target platform.
@@ -20,7 +20,7 @@ setup(
                         'SVM_pseudobulk=cPredictor.SVM_prediction:pseudopars'
     ]
   },
-  install_requires=['setuptools>=65.5.1', 'wheel', 'python-build',
+  install_requires=['setuptools==68.2.2', 'wheel', 'python-build',
                     'h5py', 'numpy>=1.23.3, <1.24', 'pandas>=1.4.4',
                     'scikit-learn', 'scanpy>=1.9.1',
                     'importlib-resources', 'pytest-cov'],

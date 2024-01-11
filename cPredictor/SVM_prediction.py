@@ -1,5 +1,3 @@
-from sklearnex import patch_sklearn 
-patch_sklearn()
 import argparse
 import gc
 import os
@@ -10,6 +8,8 @@ import time as tm
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
+from sklearnex import patch_sklearn 
+patch_sklearn()
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
@@ -21,11 +21,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 import pyarrow as pa
 from scanpy import read_h5ad
-from importlib.resources import files
-import re
-from statistics import mean
-from scipy.stats import pearsonr
-from scipy.stats import spearmanr
+import logging
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
@@ -43,7 +39,10 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     meta_atlas : If the flag is added the predictions will use meta-atlas data.
     meaning that reference_H5AD and LabelsPath do not need to be specified.
     '''
-    print("Reading in the reference and query H5AD objects")
+    logging.basicConfig(level=logging.DEBUG, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
+                        filename='cPredictor_predict.log', filemode='w')
+    logging.info('Reading in the reference and query H5AD objects')
     
     # Load in the cma.h5ad object or use a different reference
     if meta_atlas is False:
@@ -59,10 +58,10 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     try:
         testing = testing.raw.to_adata()
     except AttributeError:
-        print("Query object does not contain raw data, using sparce matrix from adata.X")
-        print("Please manually check if this sparce matrix contains actual raw counts")
+        logging.warning('Query object does not contain raw data, using sparce matrix from adata.X')
+        logging.warning('Please manually check if this sparce matrix contains actual raw counts')
 
-    print("Generating training and testing matrices from the H5AD objects")
+    logging.info('Generating training and testing matrices from the H5AD objects')
     
     # training data
     matrix_train = pd.DataFrame.sparse.from_spmatrix(training.X, index=list(training.obs.index.values), columns=list(training.var.features.values))
@@ -72,10 +71,11 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         testing.var['features']
     except KeyError:
         testing.var['features'] = testing.var.index
+        logging.debug('Setting the var index as var features')
     
     matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(testing.var.features.values))
     
-    print("Unifying training and testing matrices for shared genes")
+    logging.info('Unifying training and testing matrices for shared genes')
     
     # subselect the train matrix for values that are present in both
     df_all = training.var[["features"]].merge(testing.var[["features"]].drop_duplicates(), on=['features'], how='left', indicator=True)
@@ -87,7 +87,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     matrix_train = matrix_train[matrix_train.columns.intersection(col_one_list)]
     matrix_train = matrix_train[list(matrix_test.columns)]
     
-    print("Number of genes remaining after unifying training and testing matrices: "+str(len(matrix_test.columns)))
+    logging.info('Number of genes remaining after unifying training and testing matrices: '+str(len(matrix_test.columns)))
     
     # Convert the ordered dataframes back to nparrays
     data_train = matrix_train.to_numpy(dtype="float16")
@@ -95,9 +95,8 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
 
     # Save test data on-disk for efficient memory data management
     data_test = pa.Table.from_pandas(pd.DataFrame(data_test))
-    with pa.OSFile('data_test.arrow', 'wb') as sink:
-        with pa.RecordBatchFileWriter(sink, data_test.schema) as writer:
-            writer.write_table(data_test)
+    with pa.OSFile('data_test.arrow', 'wb') as sink, pa.RecordBatchFileWriter(sink, data_test.schema) as writer:
+    	writer.write_table(data_test)
     
     # Delete large objects from memory
     del matrix_train, matrix_test, training, testing, data_test, training1, df_all
@@ -120,22 +119,22 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         data_test = pa.ipc.open_file(source).read_all()
         data_test = data_test.to_pandas().to_numpy()
 
-    print("Log normalizing the training and testing data")
+    logging.info('Log normalizing the training and testing data')
     
     # normalise data
     np.log1p(data_train,out=data_train)
     np.log1p(data_test,out=data_test)  
 
-    print("Scaling the training and testing data")
+    logging.info('Scaling the training and testing data')
     scaler = MinMaxScaler()
     data_train = scaler.fit_transform(data_train)
     data_test = scaler.fit_transform(data_test)
 
-    Classifier = LinearSVC(dual="auto", random_state=42)
+    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
     pred = []
     
     if rejected is True:
-        print("Running SVMrejection")
+        logging.info('Running SVMrejection')
         kf = KFold(n_splits=3)
         clf = CalibratedClassifierCV(Classifier, cv=kf)
         probability = [] 
@@ -154,7 +153,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         probability.to_csv(str(OutputDir) + "SVMrej_Prob.csv", index = False)
     
     if rejected is False:
-        print("Running SVM")
+        logging.info('Running SVM')
         Classifier.fit(data_train, labels_train.values.ravel())
         predicted = Classifier.predict(data_test)    
         pred.extend(predicted)
@@ -162,7 +161,6 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         
         # Save the predicted labels
         pred.to_csv(str(OutputDir) + "SVM_Pred_Labels.csv", index =False)
-
 
 def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_atlas=False, show_bar=False):
     '''
@@ -178,12 +176,16 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     show_bar: Shows bar plots depending on the SVM_type, split over replicates.
 
     '''
-    print("Reading query data")
+    logging.basicConfig(level=logging.DEBUG, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
+                        filename='cPredictor_import.log', filemode='w')
+    logging.info('Reading query data')
+    
     adata = read_h5ad(query_H5AD)
     SVM_key = f"{SVM_type}_predicted"
 
     # Load in the object and add the predicted labels
-    print("Adding predictions to query data")
+    logging.info('Adding predictions to query data')
     for file in os.listdir(OutputDir):
         if file.endswith('.csv'):
             if 'rej' not in file:
@@ -225,7 +227,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
       category_colors = dict(zip(key_list, colors[:len(key_list)]))
             
     # Plot absolute and relative barcharts across replicates
-    print("Plotting barcharts")
+    logging.info('Plotting barcharts')
     if show_bar is True:
         sc.set_figure_params(figsize=(15, 5))
         
@@ -246,9 +248,9 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
                            for k in obs2_clusters}
         obs2_to_obs1
 
-        for b, l in df:
-            obs2_to_obs1[b][obs1_clusters.index(str(l))] += 1
-            obs1_to_obs2[l][obs2_clusters.index(str(b))] += 1
+        for b, v in df:
+            obs2_to_obs1[b][obs1_clusters.index(str(v))] += 1
+            obs1_to_obs2[v][obs2_clusters.index(str(b))] += 1
 
         df = pd.DataFrame.from_dict(obs2_to_obs1,orient = 'index').reset_index()
         df = df.set_index(["index"])
@@ -258,10 +260,10 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         if meta_atlas is True and colord is not None:
             palette = category_colors
             if SVM_type == 'SVM' :
-              ord_list = [key for key in palette]
+              ord_list = list(palette.keys())
               
             if SVM_type == 'SVMrej':
-              ord_list = [key for key in palette]
+              ord_list = list(palette.keys())
             
             # Sorts the df on the longer ordered list
             def sort_small_list(long_list, small_list):
@@ -298,7 +300,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         None
 
     if SVM_key == "SVM_predicted":
-        print("Plotting label prediction certainty scores")
+        logging.info('Plotting label prediction certainty scores')
         category_colors = category_colors
 
         # Create a figure and axes
@@ -323,10 +325,9 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     else:
         None
         
-    print("Saving H5AD file")
+    logging.info('Saving H5AD file')
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
-
 
 def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold=0.7):
     '''
@@ -337,8 +338,11 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     OutputDir : Output directory defining the path of the exported SVM_predictions.
     SVM_type: Type of SVM prediction, SVM or SVMrej (default).
     '''
+    logging.basicConfig(level=logging.DEBUG, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
+                        filename='cPredictor_performance.log', filemode='w')
 
-    print("Reading in the data")
+    logging.info('Reading in the data')
     Data = read_h5ad(reference_H5AD)
 
     data = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
@@ -346,14 +350,14 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
 
     # Convert the ordered dataframes back to nparrays
-    print("Normalising the data")
+    logging.info('Normalising the data')
     data = data.to_numpy(dtype="float16")
     np.log1p(data,out=data)
 
     X = data
     del data
 
-    print("Scaling the data")
+    logging.info('Scaling the data')
     scaler = MinMaxScaler()
     X = scaler.fit_transform(X)
     
@@ -374,7 +378,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     test_indices = []
 
     # Iterate over each fold and split the data
-    print("Generate indices for train and test")
+    logging.info('Generate indices for train and test')
     for train_index, test_index in kfold.split(X):
         y_train, y_test = y[train_index], y[test_index]
 
@@ -385,7 +389,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     # Run the SVM model
     test_ind = test_indices
     train_ind = train_indices
-    Classifier = LinearSVC(dual="auto", random_state=42)
+    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
 
     if SVM_type == "SVMrej":
         clf = CalibratedClassifierCV(Classifier, cv=3)
@@ -397,7 +401,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     prob_full = []
 
     for i in range(fold_splits):
-        print(f"Running cross-val {i}")
+        logging.info(f"Running cross-val {i}")
         train = X[train_ind[i]] # was data
         test = X[test_ind[i]] # was data
         y_train = y[train_ind[i]]
@@ -441,28 +445,28 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     # Calculating the weighted F1 score:
     F1score = f1_score(truelab[0].to_list(), pred[0].to_list(), average='weighted')
-    print(f"The {SVM_type} model ran with the weighted F1 score of: {F1score}")
+    logging.info(f"The {SVM_type} model ran with the weighted F1 score of: {F1score}")
 
     # Calculating the weighted accuracy score:
     acc_score = accuracy_score(truelab[0].to_list(), pred[0].to_list())
-    print(f"The {SVM_type} model ran with the weighted accuracy score of: {acc_score}")
+    logging.info(f"The {SVM_type} model ran with the weighted accuracy score of: {acc_score}")
 
     # Calculating the weighted precision score:
     prec_score = precision_score(truelab[0].to_list(),  pred[0].to_list(),average="weighted")
-    print(f"The {SVM_type} model ran with the weighted precision score of: {prec_score}")
+    logging.info(f"The {SVM_type} model ran with the weighted precision score of: {prec_score}")
 
     # Relabel truelab and predicted values by names
     truelab[0] = truelab[0].replace(res)
     pred[0] = pred[0].replace(res)
 
-    print("Saving labels to specified output directory")
+    logging.info('Saving labels to specified output directory')
     truelab.to_csv(f"{OutputDir}{SVM_type}_True_Labels.csv", index = False)
     pred.to_csv(f"{OutputDir}{SVM_type}_Pred_Labels.csv", index = False)
     tr_time.to_csv(f"{OutputDir}{SVM_type}_Training_Time.csv", index = False)
     ts_time.to_csv(f"{OutputDir}{SVM_type}_Testing_Time.csv", index = False)
 
     ## Plot the SVM figures
-    print("Plotting the confusion matrix")
+    logging.info('Plotting the confusion matrix')
     true = pd.read_csv(f"{OutputDir}{SVM_type}_True_Labels.csv")
     pred = pd.read_csv(f"{OutputDir}{SVM_type}_Pred_Labels.csv")
 
@@ -486,7 +490,6 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     cm.savefig(f"figures/{SVM_type}_cnf_matrix.png")
     return F1score,acc_score,prec_score
 
-
 def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
     '''
     Produces pseudobulk RNA-seq count files and sample files of either technical or biological replicates.
@@ -503,7 +506,11 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
         a string that specifies an .obs value in condition 1.
     OutputDir: The directory into which the results are outputted; default: "pseudobulk_output/"
     '''
-    print("Reading in the reference and query H5AD objects and adding batches")
+    logging.basicConfig(level=logging.DEBUG, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
+                        filename='cPredictor_pseudobulk.log', filemode='w')
+    
+    logging.info('Reading in the reference and query H5AD objects and adding batches')
     cond_1 = read_h5ad(condition_1)
     cond_2 = read_h5ad(condition_2)
     outputdir = OutputDir
@@ -517,7 +524,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
       cond_1_label="meta_atlas"
 
     # Then tries to read in Labels_1 as a string in obs
-    except (TypeError, FileNotFoundError) as error:
+    except (TypeError, FileNotFoundError):
       try:
         cond_1_label = str(Labels_1)
         cond_1.obs[cond_1_label]
@@ -526,10 +533,10 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
       except KeyError:
         raise ValueError('Please provide a valid name for labels in Labels_1')
       
-    print("Constructing condition for condition 1")
+    logging.info('Constructing condition for condition 1')
     cond_1.obs["condition"] = "cond1"
 
-    print("Constructing batches for condition 1")
+    logging.info('Constructing batches for condition 1')
 
     # Add extra index to the ref object:
     cond_1.obs["batch"] = cond_1.obs[condition_1_batch]
@@ -541,7 +548,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
     cond_1.obs["merged_batch"] = cond_1.obs["merged"]+"."+cond_1.obs["batch"].astype(str)
     cond_1.obs["full_batch"] = cond_1.obs["condition"]+"."+cond_1.obs["batch"].astype(str)
 
-    print("Constructing batches for condition 2")
+    logging.info('Constructing batches for condition 2')
 
     # Uses the specified SVM_type for predicted cond_2
     cond_2_label = f'{SVM_type}_predicted'
@@ -558,7 +565,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
     # Use each object as a condition
     for cond in cond_1,cond_2:
         cond_str = cond.obs["condition"].astype(str)[1]
-        print(f"Running with {cond_str}")
+        logging.info(f"Running with {cond_str}")
 
         if cond.obs["condition"].astype(str)[1] == "cond1":
             cond_name = "cond1"
@@ -578,7 +585,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
 
 
         for cluster_id in ["merged_batch","full_batch"]:
-            print("Running pseudobulk extraction with: "+str(cluster_id))
+            logging.info("Running pseudobulk extraction with: "+str(cluster_id))
             if cluster_id == "full_batch":
                 sample_lists=adata.obs[[cluster_id,"assembly","condition","full_batch"]]
             if cluster_id == "merged_batch":
@@ -587,9 +594,9 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
             sample_lists = sample_lists.drop_duplicates()
             sample_lists.rename(columns={ sample_lists.columns[0]: "sample" }, inplace = True)
 
-            rna_count_lists = list()
-            FPKM_count_lists = list()
-            cluster_names = list()
+            rna_count_lists = []
+            FPKM_count_lists = []
+            cluster_names = []
 
             for cluster in adata.obs[cluster_id].astype("category").unique():
 
@@ -603,7 +610,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
                     adata_sel = adata[adata.obs[cluster_id].isin([cluster])].copy()
                     adata_sel.raw = adata_sel
 
-                    print(
+                    logging.info(
                         str("gather data from " + cluster + " with " + str(n_cells) + " cells")
                     )
 
@@ -615,9 +622,6 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
                     X_clone2 = adata_sel.X.toarray()
                     NumNonZeroElementsByColumn = [X_clone2.sum(0)]
                     FPKM_count_lists += [list(np.array(NumNonZeroElementsByColumn)[0])]
-
-            # Specify the df.index
-            df = adata.T.to_df()
 
             # Generate the count matrix df
             rna_count_lists = pd.DataFrame(rna_count_lists)
@@ -644,7 +648,7 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
     
     # Import the intermediate results back
     for cluster_id in ["merged_batch","full_batch"]:
-        print("Running file merge with: "+str(cluster_id))
+        logging.info('Running file merge with: '+str(cluster_id))
             
         # Merge the counts from the individual objects lists
         df_1 = pd.read_csv(str(outputdir +"cond1"+"_"+str(cluster_id)+"_RNA_Counts.tsv"),sep="\t")
@@ -659,20 +663,19 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
         merged_df = pd.merge(df_1, df_2, left_index=True, right_index=True, how='inner')
         merged_df.index.name='gene'
         
-        print("Saving merged count files for "+str(cluster_id))
+        logging.info('Saving merged count files for '+str(cluster_id))
         merged_file = str(outputdir+str(cluster_id)+"_merged.tsv")
         merged_df.to_csv(merged_file, sep="\t", index=True, index_label="gene")
         
         # Save merged sample files
         cond_samples = pd.concat([df_1_samples,df_2_samples])
         
-        print("Saving sample files for "+str(cluster_id))
+        logging.info('Saving sample files for '+str(cluster_id))
         cond_samples_file = str(outputdir+str(cluster_id)+"_samples.tsv")
         cond_samples.to_csv(cond_samples_file, sep="\t", index=False)
-        print("Finished constructing contrast between conditions for: "+str(cluster_id))
+        logging.info('Finished constructing contrast between conditions for: '+str(cluster_id))
     
     return
-
 
 def predpars():
     # Create the parser
