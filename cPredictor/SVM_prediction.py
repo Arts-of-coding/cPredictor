@@ -59,7 +59,7 @@ class CpredictorClassifier():
         self.rejected = False
         self.output_dir = output_dir
         logging.info('Running SVM')
-        self.Classifier.fit(self.data_train, labels_train.ravel())
+        self.Classifier.fit(self.data_train, labels_train.values.ravel())
         self.predictions = self.Classifier.predict(self.data_test)
         self.save_results()
 
