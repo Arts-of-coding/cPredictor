@@ -440,8 +440,8 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
 
     for i in range(fold_splits):
         logging.info(f"Running cross-val {i}")
-        data_train = data_train_processed[train_ind[i]].todense()
-        data_test = data_train_processed[test_ind[i]].todense()
+        data_train = data_train_processed[train_ind[i]]
+        data_test = data_train_processed[test_ind[i]]
         labels_train = y[train_ind[i]]
         y_test = y[test_ind[i]]
 
