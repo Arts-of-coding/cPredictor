@@ -82,8 +82,9 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
     def __init__(self, Threshold_rej, rejected, OutputDir):
         CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
 
-    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train):
+    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         self.data_train = data_train
+        self.data_test= data_test
         
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
@@ -93,8 +94,9 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         self.predicted[self.unlabeled] = 999999
         return self.predicted, self.prob
 
-    def fit_and_predict_svm(self, labels_train, OutputDir, data_train):
+    def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
         self.data_train = data_train
+        self.data_test= data_test
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svm(self, labels_train, OutputDir)
         return self.predicted
@@ -447,7 +449,8 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
             predicted, prob = CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, 
                                                                                            Threshold_rej, 
                                                                                            OutputDir, 
-                                                                                           data_train)
+                                                                                           data_train, 
+                                                                                           data_test)
             pred.extend(predicted)
             prob_full.extend(prob)
             ts_time.append(tm.time()-start)
@@ -455,7 +458,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
         if SVM_type == "SVM":
             start = tm.time()
             predicted = CpredictorClassifierPerformance.fit_and_predict_svm(labels_train, OutputDir, 
-                                                                            data_train)
+                                                                            data_train, data_test)
             truelab.extend(y_test.values)
             pred.extend(predicted)
             ts_time.append(tm.time()-start)
