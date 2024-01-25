@@ -46,7 +46,7 @@ class CpredictorClassifier():
         logging.info('Running SVMrejection')
         kf = KFold(n_splits=3)
         clf = CalibratedClassifierCV(self.Classifier, cv=kf)
-        clf.fit(self.data_train, labels_train.ravel())
+        clf.fit(self.data_train, labels_train.values.ravel())
         predicted = clf.predict(self.data_test)
         prob = np.max(clf.predict_proba(self.data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
@@ -176,7 +176,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         
     else:
         cpredictor.fit_and_predict_svm(labels_train, OutputDir)
-        cpredictor.save_results()
+        cpredictor.save_results(rejected)
 
 
 def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_atlas=False, show_bar=False):
