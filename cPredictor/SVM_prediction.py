@@ -91,7 +91,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
 	super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
 	unlabeled = list(unlabeled[0])
 
- 	# set arbitrary value to convert it back to a string in the end
+	# set arbitrary value to convert it back to a string in the end
 	predicted[unlabeled] = 999999
 	return predicted, prob
 
