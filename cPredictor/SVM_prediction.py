@@ -67,11 +67,11 @@ class CpredictorClassifier():
         self.rejected = rejected
         self.predictions = pd.DataFrame(self.predictions)
         self.probabilities = pd.DataFrame(self.probabilities)
-        if not self.rejected == True:
-            self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
-        else:
+        if self.rejected is True:
             self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
             self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
+        else:
+            self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
@@ -159,10 +159,6 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         LabelsPath = 'data/training_labels_meta.csv'
     
     labels_train = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',')
-        
-    # Set threshold for rejecting cells
-    if rejected is True:
-        Threshold = Threshold_rej
 
     # Load in the test data from on disk incrementally
     with pa.memory_map('data_test.arrow', 'rb') as source:
@@ -175,7 +171,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     cpredictor.preprocess_data(data_train, data_test)
     
     if rejected is True:
-        cpredictor.fit_and_predict_svmrejection(labels_train, threshold, OutputDir)
+        cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir)
         cpredictor.save_results()
         
     else:
