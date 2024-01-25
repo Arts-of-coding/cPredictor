@@ -53,7 +53,7 @@ class CpredictorClassifier():
         predicted[unlabeled] = 'Unlabeled'
         self.predictions = predicted
         self.probabilities = prob
-        self.save_results()
+        self.save_results(self.rejected)
 
     def fit_and_predict_svm(self, labels_train, output_dir):
         self.rejected = False
@@ -61,7 +61,7 @@ class CpredictorClassifier():
         logging.info('Running SVM')
         self.Classifier.fit(self.data_train, labels_train.values.ravel())
         self.predictions = self.Classifier.predict(self.data_test)
-        self.save_results()
+        self.save_results(self.rejected)
 
     def save_results(self, rejected):
         self.rejected = rejected
@@ -172,7 +172,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     
     if rejected is True:
         cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir)
-        cpredictor.save_results()
+        cpredictor.save_results(rejected)
         
     else:
         cpredictor.fit_and_predict_svm(labels_train, OutputDir)
