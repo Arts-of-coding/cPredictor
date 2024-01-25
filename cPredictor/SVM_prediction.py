@@ -66,8 +66,8 @@ class CpredictorClassifier():
     def save_results(self, rejected):
         self.rejected = rejected
         self.predictions = pd.DataFrame(self.predictions)
-        self.probabilities = pd.DataFrame(self.probabilities)
         if self.rejected is True:
+            self.probabilities = pd.DataFrame(self.probabilities)
             self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
             self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
         else:
