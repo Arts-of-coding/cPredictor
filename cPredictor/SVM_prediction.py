@@ -86,13 +86,15 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
+
+	# Calls the function from parent class and extends it for the child
         super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
         unlabeled = list(unlabeled[0])
 
  	    # set arbitrary value to convert it back to a string in the end
         predicted[unlabeled] = 999999
 
-	    return predicted, prob
+	return predicted, prob
 
     def fit_and_predict_svm(self, labels_train, OutputDir):
         super().fit_and_predict_svm(self, labels_train, OutputDir)
