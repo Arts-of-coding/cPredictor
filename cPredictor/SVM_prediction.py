@@ -23,6 +23,56 @@ import pyarrow as pa
 from scanpy import read_h5ad
 import logging
 
+class CpredictorClassifier():
+    def __init__(self, Threshold_rej, rejected, OutputDir):
+        self.scaler = MinMaxScaler()
+        self.Classifier = LinearSVC(dual=True, random_state=42, class_weight='balanced')
+        self.threshold = Threshold_rej
+        self.rejected = rejected
+        self.output_dir = OutputDir
+        
+    def preprocess_data(self, data_train, data_test):
+        logging.info('Log normalizing the training and testing data')
+        np.log1p(data_train, out=data_train)
+        np.log1p(data_test, out=data_test)
+        logging.info('Scaling the training and testing data')
+        self.data_train = self.scaler.fit_transform(data_train)
+        self.data_test = self.scaler.fit_transform(data_test)
+
+    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
+        self.rejected = True
+        self.threshold = threshold
+        self.output_dir = output_dir
+        logging.info('Running SVMrejection')
+        kf = KFold(n_splits=3)
+        clf = CalibratedClassifierCV(self.Classifier, cv=kf)
+        clf.fit(self.data_train, labels_train.ravel())
+        predicted = clf.predict(self.data_test)
+        prob = np.max(clf.predict_proba(self.data_test), axis = 1)
+        unlabeled = np.where(prob < self.threshold)
+        predicted[unlabeled] = 'Unlabeled'
+        self.predictions = predicted
+        self.probabilities = prob
+        self.save_results()
+
+    def fit_and_predict_svm(self, labels_train, output_dir):
+        self.rejected = False
+        self.output_dir = output_dir
+        logging.info('Running SVM')
+        self.Classifier.fit(self.data_train, labels_train.ravel())
+        self.predictions = self.Classifier.predict(self.data_test)
+        self.save_results()
+
+    def save_results(self, rejected):
+        self.rejected = rejected
+        self.predictions = pd.DataFrame(self.predictions)
+        self.probabilities = pd.DataFrame(self.probabilities)
+        if not self.rejected == True:
+            self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
+        else:
+            self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
+            self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
+
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
     run baseline classifier: SVM
@@ -119,48 +169,19 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         data_test = pa.ipc.open_file(source).read_all()
         data_test = data_test.to_pandas().to_numpy()
 
-    logging.info('Log normalizing the training and testing data')
-    
-    # normalise data
-    np.log1p(data_train,out=data_train)
-    np.log1p(data_test,out=data_test)  
-
-    logging.info('Scaling the training and testing data')
-    scaler = MinMaxScaler()
-    data_train = scaler.fit_transform(data_train)
-    data_test = scaler.fit_transform(data_test)
-
-    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
-    pred = []
+    # Running cpredictor classifier
+    logging.info('Running cPredictor classifier')
+    cpredictor = CpredictorClassifier()
+    cpredictor.preprocess_data(data_train, data_test)
     
     if rejected is True:
-        logging.info('Running SVMrejection')
-        kf = KFold(n_splits=3)
-        clf = CalibratedClassifierCV(Classifier, cv=kf)
-        probability = [] 
-        clf.fit(data_train, labels_train.values.ravel())
-        predicted = clf.predict(data_test)
-        prob = np.max(clf.predict_proba(data_test), axis = 1)
-        unlabeled = np.where(prob < Threshold)
-        predicted[unlabeled] = 'Unlabeled'
-        pred.extend(predicted)
-        probability.extend(prob)
-        pred = pd.DataFrame(pred)
-        probability = pd.DataFrame(probability)
+        cpredictor.fit_and_predict_svmrejection(labels_train, threshold, OutputDir)
+        cpredictor.save_results()
         
-        # Save the labels and probability
-        pred.to_csv(str(OutputDir) + "SVMrej_Pred_Labels.csv", index = False)
-        probability.to_csv(str(OutputDir) + "SVMrej_Prob.csv", index = False)
-    
-    if rejected is False:
-        logging.info('Running SVM')
-        Classifier.fit(data_train, labels_train.values.ravel())
-        predicted = Classifier.predict(data_test)    
-        pred.extend(predicted)
-        pred = pd.DataFrame(pred)
-        
-        # Save the predicted labels
-        pred.to_csv(str(OutputDir) + "SVM_Pred_Labels.csv", index =False)
+    else:
+        cpredictor.fit_and_predict_svm(labels_train, OutputDir)
+        cpredictor.save_results()
+
 
 def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_atlas=False, show_bar=False):
     '''
