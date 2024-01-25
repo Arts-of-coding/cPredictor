@@ -31,12 +31,16 @@ class CpredictorClassifier():
         self.rejected = rejected
         self.output_dir = OutputDir
         
-    def preprocess_data(self, data_train, data_test):
-        logging.info('Log normalizing the training and testing data')
+    def preprocess_data_train(self, data_train):
+        logging.info('Log normalizing the training data')
         np.log1p(data_train, out=data_train)
-        np.log1p(data_test, out=data_test)
-        logging.info('Scaling the training and testing data')
+        logging.info('Scaling the training data')
         self.data_train = self.scaler.fit_transform(data_train)
+
+    def preprocess_data_test(self, data_test):
+        logging.info('Log normalizing the testing data')
+        np.log1p(data_test, out=data_test)
+        logging.info('Scaling the testing data')
         self.data_test = self.scaler.fit_transform(data_test)
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
@@ -168,7 +172,8 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     # Running cpredictor classifier
     logging.info('Running cPredictor classifier')
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
-    cpredictor.preprocess_data(data_train, data_test)
+    cpredictor.preprocess_data_train(data_train)
+    cpredictor.preprocess_data_test(data_test)
     
     if rejected is True:
         cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir)
