@@ -167,7 +167,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
 
     # Running cpredictor classifier
     logging.info('Running cPredictor classifier')
-    cpredictor = CpredictorClassifier()
+    cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
     cpredictor.preprocess_data(data_train, data_test)
     
     if rejected is True:
