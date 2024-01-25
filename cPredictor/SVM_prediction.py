@@ -55,45 +55,42 @@ class CpredictorClassifier():
         prob = np.max(clf.predict_proba(self.data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
         predicted[unlabeled] = 'Unlabeled'
-        self.probability = prob
-        self.unlabeled = unlabeled
         self.predictions = predicted
         self.probabilities = prob
         self.save_results(self.rejected)
-        return prob, unlabeled
 
     def fit_and_predict_svm(self, labels_train, output_dir):
-	self.rejected = False
+        self.rejected = False
         self.output_dir = output_dir
         logging.info('Running SVM')
-        self.Classifier.fit(self.data_train, labels_train.values.ravel())
+        self.Classifier.fit(self.data_trin, labels_train.values.ravel())
         self.predictions = self.Classifier.predict(self.data_test)
         self.save_results(self.rejected)
 
     def save_results(self, rejected):
-	self.rejected = rejected
-	self.predictions = pd.DataFrame(self.predictions)
-	if self.rejected is True:
-		self.probabilities = pd.DataFrame(self.probabilities)
-		self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
-		self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
-	else:
-		self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
+        self.rejected = rejected
+        self.predictions = pd.DataFrame(self.predictions)
+        if self.rejected is True:
+            self.probabilities = pd.DataFrame(self.probabilities)
+            self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
+            self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
+        else:
+            self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
 
 # Child class for performance from the CpredictorClassifier class        
 class CpredictorClassifierPerformance(CpredictorClassifier):
     def __init__(self, Threshold_rej, rejected, OutputDir):
-	CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
+        CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
 
-	# Calls the function from parent class and extends it for the child
-	super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
-	unlabeled = list(unlabeled[0])
+        # Calls the function from parent class and extends it for the child
+        super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
+        unlabeled = list(unlabeled[0])
 
-	# set arbitrary value to convert it back to a string in the end
-	predicted[unlabeled] = 999999
-	return predicted, prob
+        # set arbitrary value to convert it back to a string in the end
+        predicted[unlabeled] = 999999
+        return predicted, prob
 
     def fit_and_predict_svm(self, labels_train, OutputDir):
         super().fit_and_predict_svm(self, labels_train, OutputDir)
