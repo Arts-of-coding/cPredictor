@@ -375,7 +375,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
 
-def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold_rej=0.7):
+def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Threshold_rej=0.7, fold_splits=5):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
 
@@ -444,7 +444,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
         labels_train = y[train_ind[i]]
         y_test = y[test_ind[i]]
 
-        if SVM_type == "SVMrej":
+        if rejected is True:
             start = tm.time()
             predicted, prob = CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, 
                                                                                            Threshold_rej, 
@@ -455,7 +455,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
             prob_full.extend(prob)
             ts_time.append(tm.time()-start)
 
-        if SVM_type == "SVM":
+        if rejected is False:
             start = tm.time()
             predicted = CpredictorClassifierPerformance.fit_and_predict_svm(labels_train, OutputDir, 
                                                                             data_train, data_test)
@@ -714,7 +714,6 @@ def predpars():
     parser.add_argument('--query_H5AD', type=str, help='Path to query H5AD file')
     parser.add_argument('--LabelsPath', type=str, help='Path to cell population annotations file')
     parser.add_argument('--OutputDir', type=str, help='Path to output directory')
-
     parser.add_argument('--rejected', dest='rejected', action='store_true', help='Use SVMrejected option')
     parser.add_argument('--Threshold_rej', type=float, default=0.7, help='Threshold used when rejecting cells, default is 0.7')
     parser.add_argument('--meta_atlas', dest='meta_atlas', action='store_true', help='Use meta_atlas data')
@@ -742,20 +741,26 @@ def performpars():
     # Create the parser
     parser = argparse.ArgumentParser(description="Tests performance of SVM model based on a reference H5AD dataset.")
     parser.add_argument("--reference_H5AD", type=str, help="Path to the reference H5AD file")
-    parser.add_argument("--OutputDir", type=str, help="Output directory path")
     parser.add_argument("--LabelsPath", type=str, help="Path to the labels CSV file")
-    parser.add_argument("--SVM_type", default="SVMrej", help="Type of SVM prediction (default: SVMrej)")
-    parser.add_argument("--fold_splits", type=int, default=5, help="Number of fold splits for cross-validation (default: 5)")
+    parser.add_argument("--OutputDir", type=str, help="Output directory path")
+    parser.add_argument('--rejected', dest='rejected', action='store_true', help='Use SVMrejected option')
     parser.add_argument("--Threshold_rej", type=float, default=0.7, help="Threshold value (default: 0.7)")
+    parser.add_argument("--fold_splits", type=int, default=5, help="Number of fold splits for cross-validation (default: 5)")
+
+    # Parse the arguments
     args = parser.parse_args()
+    
+    # check that output directory exists, create it if necessary
+    if not os.path.isdir(args.OutputDir):
+        os.makedirs(args.OutputDir)
 
     SVM_performance(
         args.reference_H5AD,
-        args.OutputDir,
         args.LabelsPath,
-        SVM_type=args.SVM_type,
-        fold_splits=args.fold_splits,
-        Threshold=args.Threshold_rej)
+        args.OutputDir,
+        args.rejected,
+        args.Threshold_rej,
+        args.fold_splits)
 
 
 def importpars():
@@ -794,6 +799,10 @@ def pseudopars():
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
     
     args = parser.parse_args()
+
+    # check that output directory exists, create it if necessary
+    if not os.path.isdir(args.OutputDir):
+        os.makedirs(args.OutputDir)
 
     SVM_pseudobulk(
         args.condition_1,
