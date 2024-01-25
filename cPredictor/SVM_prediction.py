@@ -87,17 +87,17 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
-        unlabeled = list(unlabeled[0])
+        self.unlabeled = list(self.unlabeled[0])
 
         # set arbitrary value to convert it back to a string in the end
-        predicted[unlabeled] = 999999
-        return predicted, prob
+        self.predicted[self.unlabeled] = 999999
+        return self.predicted, self.prob
 
     def fit_and_predict_svm(self, labels_train, OutputDir, data_train):
         self.data_train = data_train
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svm(self, labels_train, OutputDir)
-        return predicted
+        return self.predicted
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
