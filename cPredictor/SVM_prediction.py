@@ -71,7 +71,7 @@ class CpredictorClassifier():
         self.save_results(self.rejected)
 
     def save_results(self, rejected):
-        self.rejected = rejected
+	self.rejected = rejected
         self.predictions = pd.DataFrame(self.predictions)
         if self.rejected is True:
             self.probabilities = pd.DataFrame(self.probabilities)
@@ -83,17 +83,16 @@ class CpredictorClassifier():
 # Child class for performance from the CpredictorClassifier class        
 class CpredictorClassifierPerformance(CpredictorClassifier):
     def __init__(self, Threshold_rej, rejected, OutputDir):
-        CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
+	CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
 
 	# Calls the function from parent class and extends it for the child
-        super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
-        unlabeled = list(unlabeled[0])
+	super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
+	unlabeled = list(unlabeled[0])
 
- 	    # set arbitrary value to convert it back to a string in the end
-        predicted[unlabeled] = 999999
-
+ 	# set arbitrary value to convert it back to a string in the end
+	predicted[unlabeled] = 999999
 	return predicted, prob
 
     def fit_and_predict_svm(self, labels_train, OutputDir):
