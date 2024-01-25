@@ -63,7 +63,7 @@ class CpredictorClassifier():
         return prob, unlabeled
 
     def fit_and_predict_svm(self, labels_train, output_dir):
-        self.rejected = False
+	self.rejected = False
         self.output_dir = output_dir
         logging.info('Running SVM')
         self.Classifier.fit(self.data_train, labels_train.values.ravel())
@@ -72,13 +72,13 @@ class CpredictorClassifier():
 
     def save_results(self, rejected):
 	self.rejected = rejected
-        self.predictions = pd.DataFrame(self.predictions)
-        if self.rejected is True:
-            self.probabilities = pd.DataFrame(self.probabilities)
-            self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
-            self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
-        else:
-            self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
+	self.predictions = pd.DataFrame(self.predictions)
+	if self.rejected is True:
+		self.probabilities = pd.DataFrame(self.probabilities)
+		self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
+		self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
+	else:
+		self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
 
 # Child class for performance from the CpredictorClassifier class        
 class CpredictorClassifierPerformance(CpredictorClassifier):
