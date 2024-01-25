@@ -77,6 +77,12 @@ class CpredictorClassifier():
         else:
             self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
 
+# Child class for performance from the CpredictorClassifier class
+class CpredictorClassifierPerformance(CpredictorClassifier, fold_splits):
+    def __init__(self, Threshold_rej, rejected, OutputDir):
+        CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
+        self.folds=fold_splits
+
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
     run baseline classifier: SVM
@@ -351,7 +357,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
 
-def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold=0.7):
+def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold_rej=0.7):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
 
@@ -367,22 +373,14 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     logging.info('Reading in the data')
     Data = read_h5ad(reference_H5AD)
 
-    data = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
+    data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
 
+    # Using the child class of the CpredictorClassifier
+    cpredictorperf = CpredictorClassifierPerformance(CpredictorClassifier, fold_splits)
+    cpredictorperf.preprocess_data_train(data_train)
+
+    # Do label encoding
     labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
-
-    # Convert the ordered dataframes back to nparrays
-    logging.info('Normalising the data')
-    data = data.to_numpy(dtype="float16")
-    np.log1p(data,out=data)
-
-    X = data
-    del data
-
-    logging.info('Scaling the data')
-    scaler = MinMaxScaler()
-    X = scaler.fit_transform(X)
-    
     label_encoder = LabelEncoder()
     
     y = label_encoder.fit_transform(labels.iloc[:,0].tolist())
@@ -401,7 +399,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     # Iterate over each fold and split the data
     logging.info('Generate indices for train and test')
-    for train_index, test_index in kfold.split(X):
+    for train_index, test_index in kfold.split(data_train):
         y_train, y_test = y[train_index], y[test_index]
 
         # Store the indices of the training and test sets for each fold
@@ -411,10 +409,8 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     # Run the SVM model
     test_ind = test_indices
     train_ind = train_indices
-    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
-
-    if SVM_type == "SVMrej":
-        clf = CalibratedClassifierCV(Classifier, cv=3)
+    #if SVM_type == "SVMrej":
+    #    clf = CalibratedClassifierCV(Classifier, cv=3)
 
     tr_time=[]
     ts_time=[]
@@ -424,38 +420,26 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     for i in range(fold_splits):
         logging.info(f"Running cross-val {i}")
-        train = X[train_ind[i]] # was data
-        test = X[test_ind[i]] # was data
+        train = X[train_ind[i]]
+        test = X[test_ind[i]]
         y_train = y[train_ind[i]]
         y_test = y[test_ind[i]]
 
         if SVM_type == "SVMrej":
             start = tm.time()
-            clf.fit(train, y_train.ravel()) #.values
-            tr_time.append(tm.time()-start)
-
-            start = tm.time()
-            predicted = clf.predict(test)
-            prob = np.max(clf.predict_proba(test), axis = 1)
-
-            unlabeled = np.where(prob < float(Threshold))
+            CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir) #.values
             unlabeled = list(unlabeled[0])
             predicted[unlabeled] = 999999 # set arbitrary value to convert it back to a string in the end
-            ts_time.append(tm.time()-start)
             pred.extend(predicted)
             prob_full.extend(prob)
+            ts_time.append(tm.time()-start)
 
         if SVM_type == "SVM":
             start = tm.time()
-            Classifier.fit(train, y_train.ravel())
-            tr_time.append(tm.time()-start)
-
-            start = tm.time()
-            predicted = Classifier.predict(test)
-            ts_time.append(tm.time()-start)
-
+            CpredictorClassifierPerformance.fit_and_predict_svm(self, labels_train, OutputDir)
             truelab.extend(y_test.values)
             pred.extend(predicted)
+            ts_time.append(tm.time()-start)
 
         truelab.extend(y_test)
 
@@ -740,7 +724,7 @@ def performpars():
     parser.add_argument("--LabelsPath", type=str, help="Path to the labels CSV file")
     parser.add_argument("--SVM_type", default="SVMrej", help="Type of SVM prediction (default: SVMrej)")
     parser.add_argument("--fold_splits", type=int, default=5, help="Number of fold splits for cross-validation (default: 5)")
-    parser.add_argument("--Threshold", type=float, default=0.7, help="Threshold value (default: 0.7)")
+    parser.add_argument("--Threshold_rej", type=float, default=0.7, help="Threshold value (default: 0.7)")
     args = parser.parse_args()
 
     SVM_performance(
@@ -749,7 +733,7 @@ def performpars():
         args.LabelsPath,
         SVM_type=args.SVM_type,
         fold_splits=args.fold_splits,
-        Threshold=args.Threshold)
+        Threshold=args.Threshold_rej)
 
 
 def importpars():
