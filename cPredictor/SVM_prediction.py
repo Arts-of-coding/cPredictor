@@ -55,9 +55,12 @@ class CpredictorClassifier():
         prob = np.max(clf.predict_proba(self.data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
         predicted[unlabeled] = 'Unlabeled'
+        self.probability = prob
+        self.unlabeled = unlabeled
         self.predictions = predicted
         self.probabilities = prob
         self.save_results(self.rejected)
+        return prob, unlabeled
 
     def fit_and_predict_svm(self, labels_train, output_dir):
         self.rejected = False
@@ -77,11 +80,23 @@ class CpredictorClassifier():
         else:
             self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
 
-# Child class for performance from the CpredictorClassifier class
-class CpredictorClassifierPerformance(CpredictorClassifier, fold_splits):
+# Child class for performance from the CpredictorClassifier class        
+class CpredictorClassifierPerformance(CpredictorClassifier):
     def __init__(self, Threshold_rej, rejected, OutputDir):
         CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
-        self.folds=fold_splits
+
+    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
+        super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
+        unlabeled = list(unlabeled[0])
+
+ 	    # set arbitrary value to convert it back to a string in the end
+        predicted[unlabeled] = 999999
+
+	    return predicted, prob
+
+    def fit_and_predict_svm(self, labels_train, OutputDir):
+        super().fit_and_predict_svm(self, labels_train, OutputDir)
+        return predicted
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
@@ -376,9 +391,10 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
 
     # Using the child class of the CpredictorClassifier
-    cpredictorperf = CpredictorClassifierPerformance(CpredictorClassifier, fold_splits)
+    cpredictorperf = CpredictorClassifierPerformance(CpredictorClassifier)
     cpredictorperf.preprocess_data_train(data_train)
-
+    data_train_processed = data_train
+    
     # Do label encoding
     labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
     label_encoder = LabelEncoder()
@@ -399,7 +415,7 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     # Iterate over each fold and split the data
     logging.info('Generate indices for train and test')
-    for train_index, test_index in kfold.split(data_train):
+    for train_index, test_index in kfold.split(data_train_processed):
         y_train, y_test = y[train_index], y[test_index]
 
         # Store the indices of the training and test sets for each fold
@@ -420,23 +436,22 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     for i in range(fold_splits):
         logging.info(f"Running cross-val {i}")
-        train = X[train_ind[i]]
-        test = X[test_ind[i]]
-        y_train = y[train_ind[i]]
+        data_train = data_train_processed[train_ind[i]]
+        data_test = data_train_processed[test_ind[i]]
+        labels_train = y[train_ind[i]]
         y_test = y[test_ind[i]]
 
         if SVM_type == "SVMrej":
             start = tm.time()
-            CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir) #.values
-            unlabeled = list(unlabeled[0])
-            predicted[unlabeled] = 999999 # set arbitrary value to convert it back to a string in the end
+            predicted, prob = CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, 
+                                                                                           Threshold_rej, OutputDir)
             pred.extend(predicted)
             prob_full.extend(prob)
             ts_time.append(tm.time()-start)
 
         if SVM_type == "SVM":
             start = tm.time()
-            CpredictorClassifierPerformance.fit_and_predict_svm(self, labels_train, OutputDir)
+            predicted = CpredictorClassifierPerformance.fit_and_predict_svm(labels_train, OutputDir)
             truelab.extend(y_test.values)
             pred.extend(predicted)
             ts_time.append(tm.time()-start)
