@@ -80,7 +80,7 @@ class CpredictorClassifier():
 # Child class for performance from the CpredictorClassifier class        
 class CpredictorClassifierPerformance(CpredictorClassifier):
     def __init__(self, Threshold_rej, rejected, OutputDir):
-        CpredictorClassifier.__init__(CpredictorClassifier, Threshold_rej, rejected, OutputDir)
+        super().__init__(Threshold_rej, rejected, OutputDir)
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         self.data_train = data_train
