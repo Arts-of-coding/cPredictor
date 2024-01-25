@@ -392,7 +392,8 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     Data = read_h5ad(reference_H5AD)
 
     data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
-
+    data_train = data_train.to_numpy(dtype="float16")
+    
     # Using the child class of the CpredictorClassifier
     cpredictorperf = CpredictorClassifierPerformance(Threshold_rej, rejected, OutputDir)
     cpredictorperf.preprocess_data_train(data_train)
