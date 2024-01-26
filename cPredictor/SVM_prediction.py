@@ -395,7 +395,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         logging.info(f'Selecting genes based on an summed expression threshold of minimally {expr_tresh} in each cluster')
         cluster_id = 'labelssvm'
         labels = pd.read_csv(LabelsPath)
-        h5ad_object.obs['labelssvm']=labels.values
+        h5ad_object.obs['labelssvm']=labels.values.tolist()
         res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs[cluster_id].astype("category").unique())
         ## Set up scanpy object based on expression treshold
         for clust in h5ad_object.obs[cluster_id].astype("category").unique():
