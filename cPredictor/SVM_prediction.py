@@ -456,8 +456,8 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
                                                                           data_train, 
                                                                           data_test)
             print(predicted)
-            pred.extend(predicted)
-            prob_full.extend(prob)
+            pred.extend(predicted.iloc[:, 0].tolist())
+            prob_full.extend(prob.iloc[:, 0].tolist())
             ts_time.append(tm.time()-start)
 
         if rejected is False:
@@ -466,7 +466,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
             predicted = cpredictorperf.fit_and_predict_svm(labels_train, OutputDir, 
                                                                             data_train, data_test)
             truelab.extend(y_test)
-            pred.extend(predicted)
+            pred.extend(predicted.iloc[:, 0].tolist())
             ts_time.append(tm.time()-start)
 
         truelab.extend(y_test)
