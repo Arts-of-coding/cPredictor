@@ -90,7 +90,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
-        super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test)
+        super().fit_and_predict_svmrejection(labels_train, threshold, output_dir, data_train, data_test)
         
         # Extend the function for cross-validation
         self.unlabeled = list(self.unlabeled[0])
@@ -99,7 +99,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
 
     def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
-        super().fit_and_predict_svm(self, labels_train, OutputDir)
+        super().fit_and_predict_svm(labels_train, OutputDir, data_train, data_test)
         return self.predicted
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
