@@ -92,6 +92,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         self.unlabeled = np.where(self.probabilities < self.threshold)
         
         # Extend the function for cross-validation
+        self.unlabeled = list(self.unlabeled[0])
         self.predicted[self.unlabeled] = 999999
         return self.predicted, self.prob
 
