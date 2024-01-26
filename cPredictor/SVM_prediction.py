@@ -200,6 +200,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     data_test = cpredictor.preprocess_data_test(data_test)
     
     if rejected is True:
+        print(data_test)
         cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir, data_train, data_test)
         cpredictor.save_results(rejected)
         
@@ -448,7 +449,6 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         if rejected is True:
             start = tm.time()
             SVM_type = "SVMrejected"
-            print(data_train)
             print(data_test)
             predicted, prob = CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir, data_train, data_test)
             pred.extend(predicted)
