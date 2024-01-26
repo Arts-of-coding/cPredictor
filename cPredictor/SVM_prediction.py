@@ -93,7 +93,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svmrejection(labels_train, threshold, output_dir, data_train, data_test)
-        return self.predictions, self.prob
+        return self.predictions, self.probabilities
 
     def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
