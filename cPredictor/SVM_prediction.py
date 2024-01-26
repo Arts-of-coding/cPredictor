@@ -449,11 +449,11 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         if rejected is True:
             start = tm.time()
             SVM_type = "SVMrejected"
+            print(data_test)
             predicted, prob = CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, 
                                                                                            Threshold_rej, 
                                                                                            OutputDir, 
-                                                                                           data_train, 
-                                                                                           data_test)
+                                                                                           data_train, data_test)
             pred.extend(predicted)
             prob_full.extend(prob)
             ts_time.append(tm.time()-start)
