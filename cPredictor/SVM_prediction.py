@@ -391,6 +391,27 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     logging.info('Reading in the data')
     Data = read_h5ad(reference_H5AD)
 
+    def expression_cutoff(h5ad_object, expr_tresh = 5):
+        logging.info(f'Selecting genes based on an summed expression threshold of minimally {expr_tresh} in each cluster')
+
+        res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs[cluster_id].astype("category").unique())
+        ## Set up scanpy object based on expression treshold
+        for clust in h5ad_object.obs[cluster_id].astype("category").unique():
+            if h5ad_object.raw is not None:
+                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].raw.X.sum(0)
+            else:
+                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].X.sum(0)
+        res.loc["sum"]=np.sum(res,axis=0).tolist()
+        res=res.transpose()
+        res=res.loc[res['sum'] > expr_tresh]
+        genes_expressed = res.index.tolist()
+        logging.info("Amount of genes that remain: " + str(len(genes_expressed)))
+        del res
+        h5ad_object = h5ad_object[:, genes_expressed]
+        return h5ad_object
+
+    Data=expression_cutoff(Data)
+
     data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
     data_train = data_train.to_numpy(dtype="float16")
     
