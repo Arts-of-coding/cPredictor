@@ -87,9 +87,11 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svmrejection(labels_train, threshold, output_dir, data_train, data_test)
+
+        # Defining self.unlabeled
+        self.unlabeled = np.where(self.probabilities < self.threshold)
         
         # Extend the function for cross-validation
-        self.unlabeled = list(self.unlabeled[0])
         self.predicted[self.unlabeled] = 999999
         return self.predicted, self.prob
 
