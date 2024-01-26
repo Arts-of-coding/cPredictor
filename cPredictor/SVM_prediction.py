@@ -35,28 +35,26 @@ class CpredictorClassifier():
         logging.info('Log normalizing the training data')
         np.log1p(data_train, out=data_train)
         logging.info('Scaling the training data')
-        self.data_train = self.scaler.fit_transform(data_train)
-        return self.data_train
+        data_train = self.scaler.fit_transform(data_train)
+        return data_train
 
     def preprocess_data_test(self, data_test):
         logging.info('Log normalizing the testing data')
         np.log1p(data_test, out=data_test)
         logging.info('Scaling the testing data')
-        self.data_test = self.scaler.fit_transform(data_test)
-        return self.data_test
+        data_test = self.scaler.fit_transform(data_test)
+        return data_test
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         self.rejected = True
         self.threshold = threshold
         self.output_dir = output_dir
-        self.data_train = data_train
-        self.data_test = data_test
         logging.info('Running SVMrejection')
         kf = KFold(n_splits=3)
         clf = CalibratedClassifierCV(self.Classifier, cv=kf)
-        clf.fit(self.data_train, labels_train.values.ravel())
-        predicted = clf.predict(self.data_test)
-        prob = np.max(clf.predict_proba(self.data_test), axis = 1)
+        clf.fit(data_train, labels_train.values.ravel())
+        predicted = clf.predict(data_test)
+        prob = np.max(clf.predict_proba(data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
         predicted[unlabeled] = 'Unlabeled'
         self.predictions = predicted
@@ -66,11 +64,9 @@ class CpredictorClassifier():
     def fit_and_predict_svm(self, labels_train, output_dir, data_train, data_test):
         self.rejected = False
         self.output_dir = output_dir
-        self.data_train = data_train
-        self.data_test = data_test
         logging.info('Running SVM')
-        self.Classifier.fit(self.data_train, labels_train.values.ravel())
-        self.predictions = self.Classifier.predict(self.data_test)
+        self.Classifier.fit(data_train, labels_train.values.ravel())
+        self.predictions = self.Classifier.predict(data_test)
         self.save_results(self.rejected)
 
     def save_results(self, rejected):
