@@ -449,10 +449,6 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         if rejected is True:
             start = tm.time()
             SVM_type = "SVMrejected"
-            print(labels_train.shape)
-            print(y_test.shape)
-            print(data_train.shape)
-            print(data_test.shape)
             predicted, prob = cpredictorperf.fit_and_predict_svmrejection(labels_train, 
                                                                           Threshold_rej, 
                                                                           OutputDir, 
@@ -476,6 +472,10 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     truelab = pd.DataFrame(truelab)
     pred = pd.DataFrame(pred)
 
+# Check truelab and predicted
+    print(truelab.shape)
+    print(pred.shape)
+    
     tr_time = pd.DataFrame(tr_time)
     ts_time = pd.DataFrame(ts_time)
 
