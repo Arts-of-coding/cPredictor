@@ -444,6 +444,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         data_test = data_train_processed[test_ind[i]]
         labels_train = y[train_ind[i]]
         print(labels_train)
+        print(labels_train.shape)
         y_test = y[test_ind[i]]
 
         if rejected is True:
@@ -454,6 +455,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
                                                                           OutputDir, 
                                                                           data_train, 
                                                                           data_test)
+            print(predicted)
             pred.extend(predicted)
             prob_full.extend(prob)
             ts_time.append(tm.time()-start)
@@ -471,6 +473,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
 
     truelab = pd.DataFrame(truelab)
     pred = pd.DataFrame(pred)
+    print(pred)
 
 # Check truelab and predicted
     print(truelab.shape)
