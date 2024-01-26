@@ -391,7 +391,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     logging.info('Reading in the data')
     Data = read_h5ad(reference_H5AD)
 
-    def expression_cutoff(h5ad_object, expr_tresh = 5, LabelsPath):
+    def expression_cutoff(h5ad_object, LabelsPath, expr_tresh = 5):
         logging.info(f'Selecting genes based on an summed expression threshold of minimally {expr_tresh} in each cluster')
         cluster_id = 'labelssvm'
         labels = pd.read_csv(LabelsPath)
