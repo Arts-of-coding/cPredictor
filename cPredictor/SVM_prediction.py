@@ -56,7 +56,13 @@ class CpredictorClassifier():
         predicted = clf.predict(data_test)
         prob = np.max(clf.predict_proba(data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
-        predicted[unlabeled] = 'Unlabeled'
+
+        # For unlabeled values from the SVMrejection put values of strings and integers
+        try:
+            predicted[unlabeled] = 'Unlabeled'
+        except (ValueError as e):
+            unlabeled = list(unlabeled[0])
+            predicted[unlabeled] = 999999
         self.predictions = predicted
         self.probabilities = prob
         self.save_results(self.rejected)
@@ -87,13 +93,6 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svmrejection(labels_train, threshold, output_dir, data_train, data_test)
-
-        # Defining self.unlabeled
-        self.unlabeled = np.where(self.probabilities < self.threshold)
-        
-        # Extend the function for cross-validation
-        self.unlabeled = list(self.unlabeled[0])
-        self.predictions[self.unlabeled] = 999999
         return self.predictions, self.prob
 
     def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
@@ -465,7 +464,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
             SVM_type = "SVM"
             predicted = cpredictorperf.fit_and_predict_svm(labels_train, OutputDir, 
                                                                             data_train, data_test)
-            truelab.extend(y_test.values)
+            truelab.extend(y_test)
             pred.extend(predicted)
             ts_time.append(tm.time()-start)
 
