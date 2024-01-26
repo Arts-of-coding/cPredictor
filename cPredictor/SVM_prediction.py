@@ -97,7 +97,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         self.predicted[self.unlabeled] = 999999
         return self.predicted, self.prob
 
-    def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test, data_train, data_test):
+    def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svm(self, labels_train, OutputDir)
         return self.predicted
