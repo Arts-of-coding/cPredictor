@@ -60,7 +60,7 @@ class CpredictorClassifier():
         # For unlabeled values from the SVMrejection put values of strings and integers
         try:
             predicted[unlabeled] = 'Unlabeled'
-        except (ValueError as e):
+        except ValueError:
             unlabeled = list(unlabeled[0])
             predicted[unlabeled] = 999999
         self.predictions = predicted
