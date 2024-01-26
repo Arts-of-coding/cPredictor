@@ -36,17 +36,21 @@ class CpredictorClassifier():
         np.log1p(data_train, out=data_train)
         logging.info('Scaling the training data')
         self.data_train = self.scaler.fit_transform(data_train)
+        return self.data_train
 
     def preprocess_data_test(self, data_test):
         logging.info('Log normalizing the testing data')
         np.log1p(data_test, out=data_test)
         logging.info('Scaling the testing data')
         self.data_test = self.scaler.fit_transform(data_test)
+        return self.data_test
 
-    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir):
+    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
         self.rejected = True
         self.threshold = threshold
         self.output_dir = output_dir
+        self.data_train = data_train
+        self.data_test = data_test
         logging.info('Running SVMrejection')
         kf = KFold(n_splits=3)
         clf = CalibratedClassifierCV(self.Classifier, cv=kf)
@@ -59,9 +63,11 @@ class CpredictorClassifier():
         self.probabilities = prob
         self.save_results(self.rejected)
 
-    def fit_and_predict_svm(self, labels_train, output_dir):
+    def fit_and_predict_svm(self, labels_train, output_dir, data_train, data_test):
         self.rejected = False
         self.output_dir = output_dir
+        self.data_train = data_train
+        self.data_test = data_test
         logging.info('Running SVM')
         self.Classifier.fit(self.data_train, labels_train.values.ravel())
         self.predictions = self.Classifier.predict(self.data_test)
@@ -83,20 +89,15 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         super().__init__(Threshold_rej, rejected, OutputDir)
 
     def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
-        self.data_train = data_train
-        self.data_test= data_test
-        
         # Calls the function from parent class and extends it for the child
-        super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir)
+        super().fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test)
+        
+        # Extend the function for cross-validation
         self.unlabeled = list(self.unlabeled[0])
-
-        # set arbitrary value to convert it back to a string in the end
         self.predicted[self.unlabeled] = 999999
         return self.predicted, self.prob
 
-    def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
-        self.data_train = data_train
-        self.data_test= data_test
+    def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test, data_train, data_test):
         # Calls the function from parent class and extends it for the child
         super().fit_and_predict_svm(self, labels_train, OutputDir)
         return self.predicted
@@ -196,15 +197,15 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     # Running cpredictor classifier
     logging.info('Running cPredictor classifier')
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
-    cpredictor.preprocess_data_train(data_train)
-    cpredictor.preprocess_data_test(data_test)
+    data_train = cpredictor.preprocess_data_train(data_train)
+    data_test = cpredictor.preprocess_data_test(data_test)
     
     if rejected is True:
-        cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir)
+        cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir, data_train, data_test)
         cpredictor.save_results(rejected)
         
     else:
-        cpredictor.fit_and_predict_svm(labels_train, OutputDir)
+        cpredictor.fit_and_predict_svm(labels_train, OutputDir, data_train, data_test)
         cpredictor.save_results(rejected)
 
 
