@@ -395,7 +395,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
     data_train = data_train.to_numpy(dtype="float16")
     
-    # Using the child class of the CpredictorClassifier
+    # Using the parent class of the CpredictorClassifier to process the data
     cpredictorperf = CpredictorClassifierPerformance(Threshold_rej, rejected, OutputDir)
     data_train = cpredictorperf.preprocess_data_train(data_train)
     data_train_processed = data_train
@@ -450,7 +450,11 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
             start = tm.time()
             SVM_type = "SVMrejected"
             print(data_test)
-            predicted, prob = CpredictorClassifierPerformance.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir, data_train, data_test)
+            predicted, prob = cpredictorperf.fit_and_predict_svmrejection(labels_train, 
+                                                                          Threshold_rej, 
+                                                                          OutputDir, 
+                                                                          data_train, 
+                                                                          data_test)
             pred.extend(predicted)
             prob_full.extend(prob)
             ts_time.append(tm.time()-start)
@@ -458,7 +462,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         if rejected is False:
             start = tm.time()
             SVM_type = "SVM"
-            predicted = CpredictorClassifierPerformance.fit_and_predict_svm(labels_train, OutputDir, 
+            predicted = cpredictorperf.fit_and_predict_svm(labels_train, OutputDir, 
                                                                             data_train, data_test)
             truelab.extend(y_test.values)
             pred.extend(predicted)
