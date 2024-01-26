@@ -52,7 +52,7 @@ class CpredictorClassifier():
         logging.info('Running SVMrejection')
         kf = KFold(n_splits=3)
         clf = CalibratedClassifierCV(self.Classifier, cv=kf)
-        clf.fit(data_train, labels_train.values.ravel())
+        clf.fit(data_train, labels_train.ravel())
         predicted = clf.predict(data_test)
         prob = np.max(clf.predict_proba(data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
@@ -187,6 +187,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         LabelsPath = 'data/training_labels_meta.csv'
     
     labels_train = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',')
+    labels_train = labels_train.values
 
     # Load in the test data from on disk incrementally
     with pa.memory_map('data_test.arrow', 'rb') as source:
