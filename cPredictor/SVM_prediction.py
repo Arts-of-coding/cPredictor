@@ -397,7 +397,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     
     # Using the child class of the CpredictorClassifier
     cpredictorperf = CpredictorClassifierPerformance(Threshold_rej, rejected, OutputDir)
-    cpredictorperf.preprocess_data_train(data_train)
+    data_train = cpredictorperf.preprocess_data_train(data_train)
     data_train_processed = data_train
     
     # Do label encoding
