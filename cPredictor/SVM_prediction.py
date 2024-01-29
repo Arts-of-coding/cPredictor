@@ -393,12 +393,13 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
 
     def expression_cutoff(h5ad_object, LabelsPath, expr_tresh = 5):
         logging.info(f'Selecting genes based on an summed expression threshold of minimally {expr_tresh} in each cluster')
-        cluster_id = 'labelssvm'
         labels = pd.read_csv(LabelsPath)
 
         try:
             res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs['labels'].astype("category").unique())
+            cluster_id = 'labels'
         except KeyError: 
+            cluster_id = 'labelssvm'
             h5ad_object.obs['labelssvm'] = labels
             h5ad_object.obs['labelssvm'] = labels.values
             res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs[cluster_id].astype("category").unique())
