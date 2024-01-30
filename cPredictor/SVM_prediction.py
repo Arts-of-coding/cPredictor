@@ -31,6 +31,32 @@ class CpredictorClassifier():
         self.threshold = Threshold_rej
         self.rejected = rejected
         self.output_dir = OutputDir
+        self.expression_treshold = 50
+
+    def expression_cutoff(Data, LabelsPath):
+        logging.info(f'Selecting genes based on an summed expression threshold of minimally {self.expression_treshold} in each cluster')
+        labels = pd.read_csv(LabelsPath,index_col=False)
+        h5ad_object = Data.copy()
+        cluster_id = 'labels'
+        h5ad_object.obs[cluster_id] = labels.iloc[:, 0].tolist()
+        res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs[cluster_id].astype("category").unique())
+        
+        ## Set up scanpy object based on expression treshold
+        for clust in h5ad_object.obs[cluster_id].astype("category").unique():
+            if h5ad_object.raw is not None:
+                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].raw.X.sum(0)
+            else:
+                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].X.sum(0)
+        res.loc["sum"]=np.sum(res,axis=0).tolist()
+        res=res.transpose()
+        res=res.loc[res['sum'] > self.expression_treshold]
+        genes_expressed = res.index.tolist()
+        logging.info("Amount of genes that remain: " + str(len(genes_expressed)))
+        h5ad_object = h5ad_object[:, genes_expressed]
+        Data = h5ad_object
+        del res, h5ad_object
+
+        return Data
         
     def preprocess_data_train(self, data_train):
         logging.info('Log normalizing the training data')
@@ -129,6 +155,10 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         meta_dir = 'data/cma_meta_atlas.h5ad'
         training = read_h5ad(meta_dir) 
 
+    # Get an instance of the Cpredictor class
+    cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
+    training = cpredictor.expression_cutoff(training, LabelsPath)
+    
     # Load in the test data
     testing = read_h5ad(query_H5AD)
 
@@ -188,7 +218,7 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     
     labels_train = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',')
     labels_train = labels_train.values
-    print(labels_train)
+    
     # Load in the test data from on disk incrementally
     with pa.memory_map('data_test.arrow', 'rb') as source:
         data_test = pa.ipc.open_file(source).read_all()
@@ -196,7 +226,6 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
 
     # Running cpredictor classifier
     logging.info('Running cPredictor classifier')
-    cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
     data_train = cpredictor.preprocess_data_train(data_train)
     data_test = cpredictor.preprocess_data_test(data_test)
     
@@ -392,38 +421,14 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     logging.info('Reading in the data')
     Data = read_h5ad(reference_H5AD)
 
-    def expression_cutoff(Data, LabelsPath, expr_tresh = 30):
-        logging.info(f'Selecting genes based on an summed expression threshold of minimally {expr_tresh} in each cluster')
-        labels = pd.read_csv(LabelsPath,index_col=False)
-        h5ad_object = Data.copy()
-        cluster_id = 'labelssvm'
-        h5ad_object.obs[cluster_id] = labels.iloc[:, 0].tolist()
-        res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs[cluster_id].astype("category").unique())
-        
-        ## Set up scanpy object based on expression treshold
-        for clust in h5ad_object.obs[cluster_id].astype("category").unique():
-            if h5ad_object.raw is not None:
-                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].raw.X.sum(0)
-            else:
-                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].X.sum(0)
-        res.loc["sum"]=np.sum(res,axis=0).tolist()
-        res=res.transpose()
-        res=res.loc[res['sum'] > expr_tresh]
-        genes_expressed = res.index.tolist()
-        logging.info("Amount of genes that remain: " + str(len(genes_expressed)))
-        h5ad_object = h5ad_object[:, genes_expressed]
-        Data = h5ad_object
-        del res, h5ad_object
-
-        return Data
-
-    Data=expression_cutoff(Data, LabelsPath)
+    # Using the child class of the CpredictorClassifier to process the data
+    cpredictorperf = CpredictorClassifierPerformance(Threshold_rej, rejected, OutputDir)
+    
+    Data = cpredictorperf.expression_cutoff(Data, LabelsPath)
 
     data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
     data_train = data_train.to_numpy(dtype="float16")
     
-    # Using the parent class of the CpredictorClassifier to process the data
-    cpredictorperf = CpredictorClassifierPerformance(Threshold_rej, rejected, OutputDir)
     data_train = cpredictorperf.preprocess_data_train(data_train)
     data_train_processed = data_train
     
@@ -471,8 +476,6 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
         data_train = data_train_processed[train_ind[i]]
         data_test = data_train_processed[test_ind[i]]
         labels_train = y[train_ind[i]]
-        print(labels_train)
-        print(labels_train.shape)
         y_test = y[test_ind[i]]
 
         if rejected is True:
@@ -483,7 +486,6 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
                                                                           OutputDir, 
                                                                           data_train, 
                                                                           data_test)
-            print(predicted)
             pred.extend(predicted.iloc[:, 0].tolist())
             prob_full.extend(prob.iloc[:, 0].tolist())
             ts_time.append(tm.time()-start)
@@ -500,11 +502,8 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
 
     truelab = pd.DataFrame(truelab)
     pred = pd.DataFrame(pred)
-    print(pred)
 
 # Check truelab and predicted
-    print(truelab.shape)
-    print(pred.shape)
     
     tr_time = pd.DataFrame(tr_time)
     ts_time = pd.DataFrame(ts_time)
