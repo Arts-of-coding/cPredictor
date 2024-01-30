@@ -13,7 +13,7 @@ patch_sklearn()
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score
@@ -26,7 +26,7 @@ import logging
 class CpredictorClassifier():
     def __init__(self, Threshold_rej, rejected, OutputDir):
         self.scaler = MinMaxScaler()
-        self.Classifier = LinearSVC(dual=False, random_state=42, class_weight='balanced')
+        self.Classifier = LinearSVC(dual = False, random_state = 42, class_weight = 'balanced')
         self.threshold = Threshold_rej
         self.rejected = rejected
         self.output_dir = OutputDir
@@ -50,7 +50,7 @@ class CpredictorClassifier():
         self.threshold = threshold
         self.output_dir = output_dir
         logging.info('Running SVMrejection')
-        kf = KFold(n_splits=3)
+        kf = StratifiedKFold(n_splits = 3, shuffle = True, random_state = 42)
         clf = CalibratedClassifierCV(self.Classifier, cv=kf)
         clf.fit(data_train, labels_train.ravel())
         predicted = clf.predict(data_test)
