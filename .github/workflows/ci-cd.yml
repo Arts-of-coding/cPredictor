@@ -67,7 +67,7 @@ jobs:
   ci:
     needs: Ruff_linter
     # Set up operating system
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     defaults:
       run:
