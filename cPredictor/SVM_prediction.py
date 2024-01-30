@@ -34,7 +34,7 @@ class CpredictorClassifier():
         self.expression_treshold = 50
 
     def expression_cutoff(Data, LabelsPath):
-        logging.info(f'Selecting genes based on an summed expression threshold of minimally {self.expression_treshold} in each cluster')
+        logging.info(f'Selecting genes based on an summed expression threshold of minimally {expression_treshold} in each cluster')
         labels = pd.read_csv(LabelsPath,index_col=False)
         h5ad_object = Data.copy()
         cluster_id = 'labels'
@@ -49,7 +49,7 @@ class CpredictorClassifier():
                 res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].X.sum(0)
         res.loc["sum"]=np.sum(res,axis=0).tolist()
         res=res.transpose()
-        res=res.loc[res['sum'] > self.expression_treshold]
+        res=res.loc[res['sum'] > expression_treshold]
         genes_expressed = res.index.tolist()
         logging.info("Amount of genes that remain: " + str(len(genes_expressed)))
         h5ad_object = h5ad_object[:, genes_expressed]
