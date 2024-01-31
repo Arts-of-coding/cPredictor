@@ -31,7 +31,7 @@ class CpredictorClassifier():
         self.threshold = Threshold_rej
         self.rejected = rejected
         self.output_dir = OutputDir
-        self.expression_treshold = 50
+        self.expression_treshold = 100
 
     def expression_cutoff(self, Data, LabelsPath):
         logging.info(f'Selecting genes based on an summed expression threshold of minimally {self.expression_treshold} in each cluster')
