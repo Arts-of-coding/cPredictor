@@ -6,6 +6,7 @@
 [![Test Coverage](https://api.codeclimate.com/v1/badges/598ba117b586183c46a8/test_coverage)](https://codeclimate.com/github/Arts-of-coding/cPredictor/test_coverage)
 [<img src="https://img.shields.io/badge/dockerhub-images-blue.svg?logo=Docker">](https://hub.docker.com/repository/docker/artsofcoding/cpredictor/general)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![DOI](https://zenodo.org/badge/662571435.svg)](https://zenodo.org/doi/10.5281/zenodo.10621121)
 
 This repository defines a command-line tool to predict (cPredictor) datasets according to a cell meta-atlases. At the present time only the meta-atlas for the cornea has been implemented.
 
@@ -49,3 +50,6 @@ The docker container is able to predict the identity of ~90.000 cells x ~25.000 
 To run the container locally you will need a computer with at least 28 GB of RAM and a 4-core processor.
 
 The documentation will be extended and improved upon in later versions.
+
+## How to cite
+When using this software package, please correctly cite the accompanied DOI under "Citation": https://zenodo.org/doi/10.5281/zenodo.10621121
