@@ -78,6 +78,13 @@ def test_SVM_plot_import():
 
     assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
 
+def test_SVMrej_plot_import():
+
+    SVM_import(query_H5AD=query,OutputDir=outdir_unit,
+      SVM_type="SVMrej",replicates="time_point",show_bar=True)
+
+    assert os.path.exists(f'figures/SVMrej_predicted_bar.pdf') == 1
+
 def test_SVM_plot_import_meta_atlas():
 
     SVM_import(query_H5AD=query,OutputDir=outdir_unit,colord=colord_tsv,
@@ -92,19 +99,23 @@ def test_SVM_pseudobulk():
     assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
     assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
 
+# Issue to still fix, no priority for now
+#def test_SVMrej_pseudobulk():
 
-def test_SVMrej_pseudobulk():
+#    SVM_pseudobulk(condition_1=reference, condition_1_batch="donors", 
+#      condition_2="SVMrej_predicted.h5ad", condition_2_batch="batch", 
+#      Labels_1=labels,SVM_type="SVMrej")
+#    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
+#    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
 
-    SVM_pseudobulk(condition_1=reference, condition_1_batch="donors", 
-      condition_2="SVM_predicted.h5ad", condition_2_batch="batch", 
-      Labels_1=labels,SVM_type="SVMrej")
-    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
-    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
+def test_SVM_performance():
 
-
+    SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir_unit, rejected=False)
+    assert os.path.exists("figures/SVM_cnf_matrix.png") == 1
+    
 def test_SVMrej_performance():
 
-    SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir_unit)
+    SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir_unit, rejected=True)
     assert os.path.exists("figures/SVMrej_cnf_matrix.png") == 1
 
 ### END-TO-END

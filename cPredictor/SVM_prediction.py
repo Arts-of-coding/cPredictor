@@ -13,6 +13,7 @@ patch_sklearn()
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
@@ -22,6 +23,109 @@ from sklearn.metrics import precision_score
 import pyarrow as pa
 from scanpy import read_h5ad
 import logging
+
+class CpredictorClassifier():
+    def __init__(self, Threshold_rej, rejected, OutputDir):
+        self.scaler = MinMaxScaler()
+        self.Classifier = LinearSVC(dual = False, random_state = 42, class_weight = 'balanced', max_iter = 2500)
+        self.threshold = Threshold_rej
+        self.rejected = rejected
+        self.output_dir = OutputDir
+        self.expression_treshold = 162
+
+    def expression_cutoff(self, Data, LabelsPath):
+        logging.info(f'Selecting genes based on an summed expression threshold of minimally {self.expression_treshold} in each cluster')
+        labels = pd.read_csv(LabelsPath,index_col=False)
+        h5ad_object = Data.copy()
+        cluster_id = 'labels'
+        h5ad_object.obs[cluster_id] = labels.iloc[:, 0].tolist()
+        res = pd.DataFrame(columns=h5ad_object.var_names.tolist(), index=h5ad_object.obs[cluster_id].astype("category").unique())
+        
+        ## Set up scanpy object based on expression treshold
+        for clust in h5ad_object.obs[cluster_id].astype("category").unique():
+            if h5ad_object.raw is not None:
+                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].raw.X.sum(0)
+            else:
+                res.loc[clust] = h5ad_object[h5ad_object.obs[cluster_id].isin([clust]),:].X.sum(0)
+        res.loc["sum"]=np.sum(res,axis=0).tolist()
+        res=res.transpose()
+        res=res.loc[res['sum'] > self.expression_treshold]
+        genes_expressed = res.index.tolist()
+        logging.info("Amount of genes that remain: " + str(len(genes_expressed)))
+        h5ad_object = h5ad_object[:, genes_expressed]
+        Data = h5ad_object
+        del res, h5ad_object
+
+        return Data
+        
+    def preprocess_data_train(self, data_train):
+        logging.info('Log normalizing the training data')
+        np.log1p(data_train, out=data_train)
+        logging.info('Scaling the training data')
+        data_train = self.scaler.fit_transform(data_train)
+        return data_train
+
+    def preprocess_data_test(self, data_test):
+        logging.info('Log normalizing the testing data')
+        np.log1p(data_test, out=data_test)
+        logging.info('Scaling the testing data')
+        data_test = self.scaler.fit_transform(data_test)
+        return data_test
+
+    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
+        self.rejected = True
+        self.threshold = threshold
+        self.output_dir = output_dir
+        logging.info('Running SVMrejection')
+        kf = StratifiedKFold(n_splits = 3, shuffle = True, random_state = 42)
+        clf = CalibratedClassifierCV(self.Classifier, cv=kf)
+        clf.fit(data_train, labels_train.ravel())
+        predicted = clf.predict(data_test)
+        prob = np.max(clf.predict_proba(data_test), axis = 1)
+        unlabeled = np.where(prob < self.threshold)
+
+        # For unlabeled values from the SVMrejection put values of strings and integers
+        try:
+            predicted[unlabeled] = 'Unlabeled'
+        except ValueError:
+            unlabeled = list(unlabeled[0])
+            predicted[unlabeled] = 999999
+        self.predictions = predicted
+        self.probabilities = prob
+        self.save_results(self.rejected)
+
+    def fit_and_predict_svm(self, labels_train, output_dir, data_train, data_test):
+        self.rejected = False
+        self.output_dir = output_dir
+        logging.info('Running SVM')
+        self.Classifier.fit(data_train, labels_train.ravel())
+        self.predictions = self.Classifier.predict(data_test)
+        self.save_results(self.rejected)
+
+    def save_results(self, rejected):
+        self.rejected = rejected
+        self.predictions = pd.DataFrame(self.predictions)
+        if self.rejected is True:
+            self.probabilities = pd.DataFrame(self.probabilities)
+            self.predictions.to_csv(f"{self.output_dir}/SVMrej_Pred_Labels.csv", index=False)
+            self.probabilities.to_csv(f"{self.output_dir}/SVMrej_Prob.csv", index=False)
+        else:
+            self.predictions.to_csv(f"{self.output_dir}/SVM_Pred_Labels.csv", index=False)
+
+# Child class for performance from the CpredictorClassifier class        
+class CpredictorClassifierPerformance(CpredictorClassifier):
+    def __init__(self, Threshold_rej, rejected, OutputDir):
+        super().__init__(Threshold_rej, rejected, OutputDir)
+
+    def fit_and_predict_svmrejection(self, labels_train, threshold, output_dir, data_train, data_test):
+        # Calls the function from parent class and extends it for the child
+        super().fit_and_predict_svmrejection(labels_train, threshold, output_dir, data_train, data_test)
+        return self.predictions, self.probabilities
+
+    def fit_and_predict_svm(self, labels_train, OutputDir, data_train, data_test):
+        # Calls the function from parent class and extends it for the child
+        super().fit_and_predict_svm(labels_train, OutputDir, data_train, data_test)
+        return self.predictions
 
 def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
     '''
@@ -51,6 +155,10 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         meta_dir = 'data/cma_meta_atlas.h5ad'
         training = read_h5ad(meta_dir) 
 
+    # Get an instance of the Cpredictor class
+    cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
+    training = cpredictor.expression_cutoff(training, LabelsPath)
+    
     # Load in the test data
     testing = read_h5ad(query_H5AD)
 
@@ -109,58 +217,26 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         LabelsPath = 'data/training_labels_meta.csv'
     
     labels_train = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',')
-        
-    # Set threshold for rejecting cells
-    if rejected is True:
-        Threshold = Threshold_rej
-
+    labels_train = labels_train.values
+    
     # Load in the test data from on disk incrementally
     with pa.memory_map('data_test.arrow', 'rb') as source:
         data_test = pa.ipc.open_file(source).read_all()
         data_test = data_test.to_pandas().to_numpy()
 
-    logging.info('Log normalizing the training and testing data')
-    
-    # normalise data
-    np.log1p(data_train,out=data_train)
-    np.log1p(data_test,out=data_test)  
-
-    logging.info('Scaling the training and testing data')
-    scaler = MinMaxScaler()
-    data_train = scaler.fit_transform(data_train)
-    data_test = scaler.fit_transform(data_test)
-
-    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
-    pred = []
+    # Running cpredictor classifier
+    logging.info('Running cPredictor classifier')
+    data_train = cpredictor.preprocess_data_train(data_train)
+    data_test = cpredictor.preprocess_data_test(data_test)
     
     if rejected is True:
-        logging.info('Running SVMrejection')
-        kf = KFold(n_splits=3)
-        clf = CalibratedClassifierCV(Classifier, cv=kf)
-        probability = [] 
-        clf.fit(data_train, labels_train.values.ravel())
-        predicted = clf.predict(data_test)
-        prob = np.max(clf.predict_proba(data_test), axis = 1)
-        unlabeled = np.where(prob < Threshold)
-        predicted[unlabeled] = 'Unlabeled'
-        pred.extend(predicted)
-        probability.extend(prob)
-        pred = pd.DataFrame(pred)
-        probability = pd.DataFrame(probability)
+        cpredictor.fit_and_predict_svmrejection(labels_train, Threshold_rej, OutputDir, data_train, data_test)
+        cpredictor.save_results(rejected)
         
-        # Save the labels and probability
-        pred.to_csv(str(OutputDir) + "SVMrej_Pred_Labels.csv", index = False)
-        probability.to_csv(str(OutputDir) + "SVMrej_Prob.csv", index = False)
-    
-    if rejected is False:
-        logging.info('Running SVM')
-        Classifier.fit(data_train, labels_train.values.ravel())
-        predicted = Classifier.predict(data_test)    
-        pred.extend(predicted)
-        pred = pd.DataFrame(pred)
-        
-        # Save the predicted labels
-        pred.to_csv(str(OutputDir) + "SVM_Pred_Labels.csv", index =False)
+    else:
+        cpredictor.fit_and_predict_svm(labels_train, OutputDir, data_train, data_test)
+        cpredictor.save_results(rejected)
+
 
 def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_atlas=False, show_bar=False):
     '''
@@ -329,7 +405,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     adata.write_h5ad(f"{SVM_key}.h5ad")
     return
 
-def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fold_splits=5, Threshold=0.7):
+def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Threshold_rej=0.7, fold_splits=5):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
 
@@ -345,22 +421,19 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     logging.info('Reading in the data')
     Data = read_h5ad(reference_H5AD)
 
-    data = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
-
-    labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
-
-    # Convert the ordered dataframes back to nparrays
-    logging.info('Normalising the data')
-    data = data.to_numpy(dtype="float16")
-    np.log1p(data,out=data)
-
-    X = data
-    del data
-
-    logging.info('Scaling the data')
-    scaler = MinMaxScaler()
-    X = scaler.fit_transform(X)
+    # Using the child class of the CpredictorClassifier to process the data
+    cpredictorperf = CpredictorClassifierPerformance(Threshold_rej, rejected, OutputDir)
     
+    Data = cpredictorperf.expression_cutoff(Data, LabelsPath)
+
+    data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
+    data_train = data_train.to_numpy(dtype="float16")
+    
+    data_train = cpredictorperf.preprocess_data_train(data_train)
+    data_train_processed = data_train
+    
+    # Do label encoding
+    labels = pd.read_csv(LabelsPath, header=0,index_col=None, sep=',') #, usecols = col
     label_encoder = LabelEncoder()
     
     y = label_encoder.fit_transform(labels.iloc[:,0].tolist())
@@ -379,8 +452,8 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     # Iterate over each fold and split the data
     logging.info('Generate indices for train and test')
-    for train_index, test_index in kfold.split(X):
-        y_train, y_test = y[train_index], y[test_index]
+    for train_index, test_index in kfold.split(data_train_processed):
+        labels_train, y_test = y[train_index], y[test_index]
 
         # Store the indices of the training and test sets for each fold
         train_indices.append(list(train_index))
@@ -389,10 +462,8 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
     # Run the SVM model
     test_ind = test_indices
     train_ind = train_indices
-    Classifier = LinearSVC(dual=True, random_state=42, class_weight="balanced")
-
-    if SVM_type == "SVMrej":
-        clf = CalibratedClassifierCV(Classifier, cv=3)
+    #if SVM_type == "SVMrej":
+    #    clf = CalibratedClassifierCV(Classifier, cv=3)
 
     tr_time=[]
     ts_time=[]
@@ -402,44 +473,38 @@ def SVM_performance(reference_H5AD, OutputDir, LabelsPath, SVM_type="SVMrej", fo
 
     for i in range(fold_splits):
         logging.info(f"Running cross-val {i}")
-        train = X[train_ind[i]] # was data
-        test = X[test_ind[i]] # was data
-        y_train = y[train_ind[i]]
+        data_train = data_train_processed[train_ind[i]]
+        data_test = data_train_processed[test_ind[i]]
+        labels_train = y[train_ind[i]]
         y_test = y[test_ind[i]]
 
-        if SVM_type == "SVMrej":
+        if rejected is True:
             start = tm.time()
-            clf.fit(train, y_train.ravel()) #.values
-            tr_time.append(tm.time()-start)
-
-            start = tm.time()
-            predicted = clf.predict(test)
-            prob = np.max(clf.predict_proba(test), axis = 1)
-
-            unlabeled = np.where(prob < float(Threshold))
-            unlabeled = list(unlabeled[0])
-            predicted[unlabeled] = 999999 # set arbitrary value to convert it back to a string in the end
-            ts_time.append(tm.time()-start)
-            pred.extend(predicted)
-            prob_full.extend(prob)
-
-        if SVM_type == "SVM":
-            start = tm.time()
-            Classifier.fit(train, y_train.ravel())
-            tr_time.append(tm.time()-start)
-
-            start = tm.time()
-            predicted = Classifier.predict(test)
+            SVM_type = "SVMrej"
+            predicted, prob = cpredictorperf.fit_and_predict_svmrejection(labels_train, 
+                                                                          Threshold_rej, 
+                                                                          OutputDir, 
+                                                                          data_train, 
+                                                                          data_test)
+            pred.extend(predicted.iloc[:, 0].tolist())
+            prob_full.extend(prob.iloc[:, 0].tolist())
             ts_time.append(tm.time()-start)
 
-            truelab.extend(y_test.values)
-            pred.extend(predicted)
+        if rejected is False:
+            start = tm.time()
+            SVM_type = "SVM"
+            predicted = cpredictorperf.fit_and_predict_svm(labels_train, OutputDir, 
+                                                                            data_train, data_test)
+            pred.extend(predicted.iloc[:, 0].tolist())
+            ts_time.append(tm.time()-start)
 
         truelab.extend(y_test)
 
     truelab = pd.DataFrame(truelab)
     pred = pd.DataFrame(pred)
 
+# Check truelab and predicted
+    
     tr_time = pd.DataFrame(tr_time)
     ts_time = pd.DataFrame(ts_time)
 
@@ -686,7 +751,6 @@ def predpars():
     parser.add_argument('--query_H5AD', type=str, help='Path to query H5AD file')
     parser.add_argument('--LabelsPath', type=str, help='Path to cell population annotations file')
     parser.add_argument('--OutputDir', type=str, help='Path to output directory')
-
     parser.add_argument('--rejected', dest='rejected', action='store_true', help='Use SVMrejected option')
     parser.add_argument('--Threshold_rej', type=float, default=0.7, help='Threshold used when rejecting cells, default is 0.7')
     parser.add_argument('--meta_atlas', dest='meta_atlas', action='store_true', help='Use meta_atlas data')
@@ -714,20 +778,26 @@ def performpars():
     # Create the parser
     parser = argparse.ArgumentParser(description="Tests performance of SVM model based on a reference H5AD dataset.")
     parser.add_argument("--reference_H5AD", type=str, help="Path to the reference H5AD file")
-    parser.add_argument("--OutputDir", type=str, help="Output directory path")
     parser.add_argument("--LabelsPath", type=str, help="Path to the labels CSV file")
-    parser.add_argument("--SVM_type", default="SVMrej", help="Type of SVM prediction (default: SVMrej)")
+    parser.add_argument("--OutputDir", type=str, help="Output directory path")
+    parser.add_argument('--rejected', dest='rejected', action='store_true', help='Use SVMrejected option')
+    parser.add_argument("--Threshold_rej", type=float, default=0.7, help="Threshold value (default: 0.7)")
     parser.add_argument("--fold_splits", type=int, default=5, help="Number of fold splits for cross-validation (default: 5)")
-    parser.add_argument("--Threshold", type=float, default=0.7, help="Threshold value (default: 0.7)")
+
+    # Parse the arguments
     args = parser.parse_args()
+    
+    # check that output directory exists, create it if necessary
+    if not os.path.isdir(args.OutputDir):
+        os.makedirs(args.OutputDir)
 
     SVM_performance(
         args.reference_H5AD,
-        args.OutputDir,
         args.LabelsPath,
-        SVM_type=args.SVM_type,
-        fold_splits=args.fold_splits,
-        Threshold=args.Threshold)
+        args.OutputDir,
+        args.rejected,
+        args.Threshold_rej,
+        args.fold_splits)
 
 
 def importpars():
@@ -766,6 +836,10 @@ def pseudopars():
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
     
     args = parser.parse_args()
+
+    # check that output directory exists, create it if necessary
+    if not os.path.isdir(args.OutputDir):
+        os.makedirs(args.OutputDir)
 
     SVM_pseudobulk(
         args.condition_1,
