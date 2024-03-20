@@ -10,15 +10,14 @@ import time as tm
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+#import matplotlib.gridspec as gridspec
 #from sklearnex import patch_sklearn
 #patch_sklearn()
-from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.calibration import CalibrationDisplay
-from sklearn.calibration import calibration_curve
+#from sklearn.calibration import CalibrationDisplay
+#from sklearn.calibration import calibration_curve
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import train_test_split
+#from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
@@ -27,13 +26,9 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.svm import LinearSVC
-import pyarrow as pa
-from scanpy import read_h5ad
 import logging
 import pickle
-import gc
 import joblib
-import os
 import json
 
 class CpredictorClassifier():
@@ -199,10 +194,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     # Get an instance of the Cpredictor class
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
 
-    if rejected is True:
-        SVM_type="SVMrej"
-    else:
-        SVM_type="SVM"
+    SVM_type="SVMrej" if rejected is True else SVM_type="SVM"
 
     # Load in the test data
     logging.info('Reading in the test data')
