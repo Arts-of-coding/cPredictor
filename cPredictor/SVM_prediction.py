@@ -194,7 +194,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     # Get an instance of the Cpredictor class
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
 
-    SVM_type="SVMrej" if rejected is True else SVM_type="SVM"
+    SVM_type = "SVMrej" if rejected is True else "SVM"
 
     # Load in the test data
     logging.info('Reading in the test data')
