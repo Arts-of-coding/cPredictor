@@ -3,16 +3,22 @@ import gc
 import os
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import scanpy as sc
+from scanpy import read_h5ad
 import time as tm
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
-from sklearnex import patch_sklearn 
-patch_sklearn()
+import matplotlib.gridspec as gridspec
+#from sklearnex import patch_sklearn
+#patch_sklearn()
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.calibration import CalibrationDisplay
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
@@ -20,9 +26,15 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
+from sklearn.svm import LinearSVC
 import pyarrow as pa
 from scanpy import read_h5ad
 import logging
+import pickle
+import gc
+import joblib
+import os
+import json
 
 class CpredictorClassifier():
     def __init__(self, Threshold_rej, rejected, OutputDir):
@@ -32,6 +44,7 @@ class CpredictorClassifier():
         self.rejected = rejected
         self.output_dir = OutputDir
         self.expression_treshold = 162
+        self.kf = StratifiedKFold(n_splits = 3, shuffle = True, random_state = 42)
 
     def expression_cutoff(self, Data, LabelsPath):
         logging.info(f'Selecting genes based on an summed expression threshold of minimally {self.expression_treshold} in each cluster')
@@ -80,6 +93,30 @@ class CpredictorClassifier():
         kf = StratifiedKFold(n_splits = 3, shuffle = True, random_state = 42)
         clf = CalibratedClassifierCV(self.Classifier, cv=kf)
         clf.fit(data_train, labels_train.ravel())
+        joblib.dump(clf, "data/model_SVMrej.pkl")
+        self.Classifier.get_params()
+        with open('data/params_SVMrej.json', 'w', encoding='utf-8') as outfile:
+            json.dump(self.Classifier.get_params(), outfile)
+        predicted = clf.predict(data_test)
+        prob = np.max(clf.predict_proba(data_test), axis = 1)
+        unlabeled = np.where(prob < self.threshold)
+
+        # For unlabeled values from the SVMrejection put values of strings and integers
+        try:
+            predicted[unlabeled] = 'Unlabeled'
+        except ValueError:
+            unlabeled = list(unlabeled[0])
+            predicted[unlabeled] = 999999
+        self.predictions = predicted
+        self.probabilities = prob
+        self.save_results(self.rejected)
+
+    def predict_only_svmrejection(self, threshold, output_dir, data_test):
+        self.rejected = True
+        self.threshold = threshold
+        self.output_dir = output_dir
+        clf = joblib.load("data/model_SVMrej.pkl")
+        logging.info('Running SVMrejection')
         predicted = clf.predict(data_test)
         prob = np.max(clf.predict_proba(data_test), axis = 1)
         unlabeled = np.where(prob < self.threshold)
@@ -99,7 +136,19 @@ class CpredictorClassifier():
         self.output_dir = output_dir
         logging.info('Running SVM')
         self.Classifier.fit(data_train, labels_train.ravel())
+        joblib.dump(self.Classifier, "data/model_SVM.pkl")
+        self.Classifier.get_params()
+        with open('data/params_SVM.json', 'w', encoding='utf-8') as outfile:
+            json.dump(self.Classifier.get_params(), outfile)
         self.predictions = self.Classifier.predict(data_test)
+        self.save_results(self.rejected)
+
+    def predict_only_svm(self, output_dir, data_test):
+        self.rejected = False
+        self.output_dir = output_dir
+        clf = joblib.load("data/model_SVM.pkl")
+        logging.info('Running SVM')
+        self.predictions = clf.predict(data_test)
         self.save_results(self.rejected)
 
     def save_results(self, rejected):
@@ -127,7 +176,7 @@ class CpredictorClassifierPerformance(CpredictorClassifier):
         super().fit_and_predict_svm(labels_train, OutputDir, data_train, data_test)
         return self.predictions
 
-def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=False, Threshold_rej=0.7,meta_atlas=False):
+def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected=False, Threshold_rej=0.7, meta_atlas=False):
     '''
     run baseline classifier: SVM
     Wrapper script to run an SVM classifier with a linear kernel on a benchmark dataset with 5-fold cross validation,
@@ -141,25 +190,22 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     rejected: If the flag is added, then the SVMrejected option is chosen. Default: False.
     Threshold_rej : Threshold used when rejecting the cells, default is 0.7.
     meta_atlas : If the flag is added the predictions will use meta-atlas data.
-    meaning that reference_H5AD and LabelsPath do not need to be specified.
+    This means that reference_H5AD and LabelsPath do not need to be specified.
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
                         filename='cPredictor_predict.log', filemode='w')
-    logging.info('Reading in the reference and query H5AD objects')
     
-    # Load in the cma.h5ad object or use a different reference
-    if meta_atlas is False:
-        training = read_h5ad(reference_H5AD) 
-    if meta_atlas is True:
-        meta_dir = 'data/cma_meta_atlas.h5ad'
-        training = read_h5ad(meta_dir) 
-
     # Get an instance of the Cpredictor class
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
-    training = cpredictor.expression_cutoff(training, LabelsPath)
-    
+
+    if rejected is True:
+        SVM_type="SVMrej"
+    else:
+        SVM_type="SVM"
+
     # Load in the test data
+    logging.info('Reading in the test data')
     testing = read_h5ad(query_H5AD)
 
     # Checks if the test data contains a raw data slot and sets it as the count value
@@ -169,19 +215,75 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
         logging.warning('Query object does not contain raw data, using sparce matrix from adata.X')
         logging.warning('Please manually check if this sparce matrix contains actual raw counts')
 
-    logging.info('Generating training and testing matrices from the H5AD objects')
-    
-    # training data
-    matrix_train = pd.DataFrame.sparse.from_spmatrix(training.X, index=list(training.obs.index.values), columns=list(training.var.features.values))
-
     # testing data
     try: 
         testing.var['features']
     except KeyError:
         testing.var['features'] = testing.var.index
         logging.debug('Setting the var index as var features')
-    
+
     matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(testing.var.features.values))
+
+    # If there is a pregenerated model the pipeline will try to run this first
+    if os.path.exists(f"data/model_{SVM_type}.pkl") and meta_atlas is True:
+        logging.info('Using a predifined model for predictions as well as for subselected genes')
+        
+        with open ('data/mergedgenes', 'rb') as fp:
+            col_one_list = pickle.load(fp)
+
+
+        print("Original DataFrame")
+        print(matrix_test, "\n")
+
+        print(col_one_list)
+        print(matrix_test.columns.to_list())
+        missing_cols = list(set(col_one_list) - set(matrix_test.columns.to_list()))
+        print(missing_cols)
+
+        if missing_cols:
+            logging.warning('Filling in missing values as 0 in test data')
+            logging.warning('Please check the validity of your query H5AD object')
+            matrix_test = matrix_test.reindex(col_one_list, axis=1)
+
+        new_col_values = np.full(len(matrix_test), 0) #np.nan
+        for col in missing_cols:
+            matrix_test[col] = new_col_values
+
+        print("Updated DataFrame")
+        print(matrix_test)
+
+        matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
+        data_test = matrix_test.to_numpy(dtype="float16")
+
+        logging.info('Processing test data')
+        data_test = cpredictor.preprocess_data_test(data_test)
+
+        if rejected is True:
+            cpredictor.predict_only_svmrejection(Threshold_rej, OutputDir, data_test)
+            cpredictor.save_results(rejected)
+        
+        else:
+            cpredictor.predict_only_svm(OutputDir, data_test)
+            cpredictor.save_results(rejected)
+
+        return
+    
+    logging.info('Reading in the reference and query H5AD objects')
+    # Load in the cma.h5ad object or use a different reference
+    if meta_atlas is False:
+        training = read_h5ad(reference_H5AD) 
+    if meta_atlas is True:
+        meta_dir = 'data/cma_meta_atlas.h5ad'
+        training = read_h5ad(meta_dir) 
+
+    training = cpredictor.expression_cutoff(training, LabelsPath)
+
+    logging.info('Generating training matrix from the H5AD object')
+    
+    # training data
+    matrix_train = pd.DataFrame.sparse.from_spmatrix(training.X, index=list(training.obs.index.values), columns=list(training.var.features.values))
+    
+    #matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(testing.var.features.values))
     
     logging.info('Unifying training and testing matrices for shared genes')
     
@@ -190,6 +292,10 @@ def SVM_predict(reference_H5AD, query_H5AD, LabelsPath, OutputDir, rejected=Fals
     df_all['_merge'] == 'left_only'
     training1 = df_all[df_all['_merge'] == 'both']
     col_one_list = training1['features'].tolist()
+
+    # Save the list present in both
+    with open('data/mergedgenes', 'wb') as fp:
+        pickle.dump(col_one_list, fp)
 
     matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
     matrix_train = matrix_train[matrix_train.columns.intersection(col_one_list)]
@@ -743,14 +849,15 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
     return
 
 def predpars():
+
     # Create the parser
     parser = argparse.ArgumentParser(description='Run SVM prediction')
 
     # Add arguments
-    parser.add_argument('--reference_H5AD', type=str, help='Path to reference H5AD file')
     parser.add_argument('--query_H5AD', type=str, help='Path to query H5AD file')
     parser.add_argument('--LabelsPath', type=str, help='Path to cell population annotations file')
     parser.add_argument('--OutputDir', type=str, help='Path to output directory')
+    parser.add_argument('--reference_H5AD', type=str, help='Path to reference H5AD file')
     parser.add_argument('--rejected', dest='rejected', action='store_true', help='Use SVMrejected option')
     parser.add_argument('--Threshold_rej', type=float, default=0.7, help='Threshold used when rejecting cells, default is 0.7')
     parser.add_argument('--meta_atlas', dest='meta_atlas', action='store_true', help='Use meta_atlas data')
@@ -764,10 +871,10 @@ def predpars():
 
     # Call the svm_prediction function with the parsed arguments
     SVM_predict(
-        args.reference_H5AD,
         args.query_H5AD,
         args.LabelsPath,
         args.OutputDir,
+        args.reference_H5AD,
         args.rejected,
         args.Threshold_rej,
         args.meta_atlas)
