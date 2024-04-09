@@ -184,7 +184,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     OutputDir : Output directory defining the path of the exported file.
     rejected: If the flag is added, then the SVMrejected option is chosen. Default: False.
     Threshold_rej : Threshold used when rejecting the cells, default is 0.7.
-    meta_atlas : If the flag is added the predictions will use meta-atlas data.
+    meta_atlas : If the flag is added the predictions will use meta_atlas data.
     This means that reference_H5AD and LabelsPath do not need to be specified.
     '''
     logging.basicConfig(level=logging.DEBUG, 
@@ -223,26 +223,17 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         with open ('data/mergedgenes', 'rb') as fp:
             col_one_list = pickle.load(fp)
 
-
-        print("Original DataFrame")
-        print(matrix_test, "\n")
-
-        print(col_one_list)
-        print(matrix_test.columns.to_list())
         missing_cols = list(set(col_one_list) - set(matrix_test.columns.to_list()))
-        print(missing_cols)
+        length_missing = len(missing_cols)
 
         if missing_cols:
-            logging.warning('Filling in missing values as 0 in test data')
+            logging.warning(f'Filling in missing values as 0 in test data for {length_missing} genes')
             logging.warning('Please check the validity of your query H5AD object')
             matrix_test = matrix_test.reindex(col_one_list, axis=1)
 
-        new_col_values = np.full(len(matrix_test), 0) #np.nan
+        new_col_values = np.full(len(matrix_test), 0)
         for col in missing_cols:
             matrix_test[col] = new_col_values
-
-        print("Updated DataFrame")
-        print(matrix_test)
 
         matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
         data_test = matrix_test.to_numpy(dtype="float16")
@@ -274,8 +265,6 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     
     # training data
     matrix_train = pd.DataFrame.sparse.from_spmatrix(training.X, index=list(training.obs.index.values), columns=list(training.var.features.values))
-    
-    #matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(testing.var.features.values))
     
     logging.info('Unifying training and testing matrices for shared genes')
     
@@ -345,8 +334,8 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     OutputDir: Output directory defining the path of the exported SVM_predictions.
     SVM_type: Type of SVM prediction, SVM (default) or SVMrej.
     Replicates: A string value specifying a column in query_H5AD.obs.
-    colord: A .tsv file with the order of the meta-atlas and corresponding colors.
-    meta_atlas : If the flag is added the predictions will use meta-atlas data.
+    colord: A .tsv file with the order of the meta_atlas and corresponding colors.
+    meta_atlas : If the flag is added the predictions will use meta_atlas data.
     show_bar: Shows bar plots depending on the SVM_type, split over replicates.
 
     '''
@@ -354,6 +343,10 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
                         filename='cPredictor_import.log', filemode='w')
     logging.info('Reading query data')
+
+    # Makes a figure dir in the output dir if it does not exist yet
+    if not os.path.isdir(f"{OutputDir}/figures"):
+        os.makedirs(f"{OutputDir}/figures")
     
     adata = read_h5ad(query_H5AD)
     SVM_key = f"{SVM_type}_predicted"
@@ -468,7 +461,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
 
         fig.tight_layout()
         fig.subplots_adjust(right=0.9)
-        fig.savefig(f"figures/{SVM_key}_bar.pdf", bbox_inches='tight')
+        fig.savefig(f"{OutputDir}/figures/{SVM_key}_bar.pdf", bbox_inches='tight')
         plt.close(fig)
     else:
         None
@@ -494,13 +487,13 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
         # Saving the density plot
-        fig.savefig("figures/Density_prediction_scores.pdf", bbox_inches='tight')
+        fig.savefig(f"{OutputDir}/figures/Density_prediction_scores.pdf", bbox_inches='tight')
         plt.close(fig)
     else:
         None
         
     logging.info('Saving H5AD file')
-    adata.write_h5ad(f"{SVM_key}.h5ad")
+    adata.write_h5ad(f"{OutputDir}/{SVM_key}.h5ad")
     return
 
 def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Threshold_rej=0.7, fold_splits=5):
@@ -517,6 +510,11 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
                         filename='cPredictor_performance.log', filemode='w')
 
     logging.info('Reading in the data')
+
+    # Makes a figure dir in the output dir if it does not exist yet
+    if not os.path.isdir(f"{OutputDir}/figures"):
+        os.makedirs(f"{OutputDir}/figures")
+
     Data = read_h5ad(reference_H5AD)
 
     # Using the child class of the CpredictorClassifier to process the data
@@ -560,8 +558,6 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     # Run the SVM model
     test_ind = test_indices
     train_ind = train_indices
-    #if SVM_type == "SVMrej":
-    #    clf = CalibratedClassifierCV(Classifier, cv=3)
 
     tr_time=[]
     ts_time=[]
@@ -648,9 +644,9 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     cnf_matrix = cnf_matrix.sort_index()
 
     # Plot png
-    sns.set(font_scale=0.8)
+    sns.set_theme(font_scale=0.8)
     cm = sns.clustermap(cnf_matrix.T, cmap="Blues", annot=True,fmt='.2%', row_cluster=False,col_cluster=False)
-    cm.savefig(f"figures/{SVM_type}_cnf_matrix.png")
+    cm.savefig(f"{OutputDir}/figures/{SVM_type}_cnf_matrix.png")
     return F1score,acc_score,prec_score
 
 def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
@@ -661,9 +657,9 @@ def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batc
 
     Parameters:
     condition_1, condition_2 : H5AD files with cells-genes matrix with cell unique barcodes as 
-        row names and gene names as column names. Condition_1 should be the meta-atlas and
+        row names and gene names as column names. Condition_1 should be the meta_atlas and
         condition_2 should be the queried object.
-    condition_1_batch : batch name for the meta-atlas object replicates (biological, technical etc.)
+    condition_1_batch : batch name for the meta_atlas object replicates (biological, technical etc.)
     condition_2_batch: batch name for the queried object
     Labels_1 : Cell population annotations file path matching the training data (.csv) or 
         a string that specifies an .obs value in condition 1.
@@ -907,7 +903,7 @@ def importpars():
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
     parser.add_argument("--replicates", type=str, help="Replicates")
     parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
-    parser.add_argument("--meta-atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
+    parser.add_argument("--meta_atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
     parser.add_argument("--show_bar", dest="show_bar", action="store_true", help="Plot barplot with SVM labels over specified replicates")
 
     args = parser.parse_args()
