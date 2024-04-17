@@ -67,8 +67,8 @@ def test_SVM_import():
 
     SVM_import(query_H5AD=query,OutputDir=outdir_unit,SVM_type="SVM",replicates="time_point")
 
-    assert os.path.exists(f'figures/Density_prediction_scores.pdf') == 1
-    assert os.path.exists(f'SVM_predicted.h5ad') == 1
+    assert os.path.exists(f'{outdir_unit}figures/Density_prediction_scores.pdf') == 1
+    assert os.path.exists(f'{outdir_unit}SVM_predicted.h5ad') == 1
 
 
 def test_SVM_plot_import():
@@ -76,26 +76,26 @@ def test_SVM_plot_import():
     SVM_import(query_H5AD=query,OutputDir=outdir_unit,
       SVM_type="SVM",replicates="time_point",show_bar=True)
 
-    assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
+    assert os.path.exists(f'{outdir_unit}figures/SVM_predicted_bar.pdf') == 1
 
 def test_SVMrej_plot_import():
 
     SVM_import(query_H5AD=query,OutputDir=outdir_unit,
       SVM_type="SVMrej",replicates="time_point",show_bar=True)
 
-    assert os.path.exists(f'figures/SVMrej_predicted_bar.pdf') == 1
+    assert os.path.exists(f'{outdir_unit}figures/SVMrej_predicted_bar.pdf') == 1
 
 def test_SVM_plot_import_meta_atlas():
 
     SVM_import(query_H5AD=query,OutputDir=outdir_unit,colord=colord_tsv,
       SVM_type="SVM",replicates="time_point",show_bar=True,meta_atlas=True)
 
-    assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
+    assert os.path.exists(f'{outdir_unit}figures/SVM_predicted_bar.pdf') == 1
       
 def test_SVM_pseudobulk():
 
     SVM_pseudobulk(condition_1=reference, condition_1_batch="donors", 
-      condition_2="SVM_predicted.h5ad", condition_2_batch="batch", Labels_1=labels)
+      condition_2=f"{outdir_unit}SVM_predicted.h5ad", condition_2_batch="batch", Labels_1=labels)
     assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
     assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
 
@@ -111,12 +111,12 @@ def test_SVM_pseudobulk():
 def test_SVM_performance():
 
     SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir_unit, rejected=False)
-    assert os.path.exists("figures/SVM_cnf_matrix.png") == 1
+    assert os.path.exists(f"{outdir_unit}figures/SVM_cnf_matrix.png") == 1
     
 def test_SVMrej_performance():
 
     SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir_unit, rejected=True)
-    assert os.path.exists("figures/SVMrej_cnf_matrix.png") == 1
+    assert os.path.exists(f"{outdir_unit}figures/SVMrej_cnf_matrix.png") == 1
 
 ### END-TO-END
 outdir = "test_output_end_to_end/"
@@ -154,12 +154,12 @@ def test_CLI_SVM_import():
                               '--query_H5AD', str(query),
                               '--OutputDir', str(outdir),
                               '--SVM_type', str("SVM"),
-                              '--meta-atlas']
+                              '--meta_atlas']
 
     subprocess.run(command_to_be_executed, shell=False, timeout=None,
                    text=True)
-    assert os.path.exists(f'figures/Density_prediction_scores.pdf') == 1
-    assert os.path.exists(f'SVM_predicted.h5ad') == 1
+    assert os.path.exists(f'{outdir}figures/Density_prediction_scores.pdf') == 1
+    assert os.path.exists(f'{outdir}SVM_predicted.h5ad') == 1
 
 
 def test_CLI_SVM_import_plots():
@@ -169,11 +169,11 @@ def test_CLI_SVM_import_plots():
                               '--OutputDir', str(outdir),
                               '--SVM_type', str("SVM"),
                               '--replicates', str("time_point"),
-                              '--show-bar']
+                              '--show_bar']
 
     subprocess.run(command_to_be_executed, shell=False, timeout=None,
                    text=True)
-    assert os.path.exists(f'figures/SVM_predicted_bar.pdf') == 1
+    assert os.path.exists(f'{outdir}figures/SVM_predicted_bar.pdf') == 1
 
     
 def test_CLI_SVM_pseudobulk():
@@ -181,7 +181,7 @@ def test_CLI_SVM_pseudobulk():
     command_to_be_executed = ['SVM_pseudobulk',
                               '--condition_1', str(reference),
                               '--condition_1_batch', str("donors"),
-                              '--condition_2', str("SVM_predicted.h5ad"),
+                              '--condition_2', str(f"{outdir_unit}SVM_predicted.h5ad"),
                               '--condition_2_batch', str("batch"),
                               '--Labels_1', str(labels)]
 
