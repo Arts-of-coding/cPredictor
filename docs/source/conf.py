@@ -3,7 +3,7 @@
 # -- Project information
 
 project = 'cPredictor'
-copyright = '2021, Arts-of-coding'
+copyright = '2024, Arts-of-coding'
 author = 'Arts-of-coding (J. Arts)'
 
 release = '0.3.2'

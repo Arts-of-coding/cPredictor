@@ -34,7 +34,7 @@ import json
 class CpredictorClassifier():
     def __init__(self, Threshold_rej, rejected, OutputDir):
         self.scaler = MinMaxScaler()
-        self.Classifier = LinearSVC(dual = False, random_state = 42, class_weight = 'balanced', max_iter = 2500)
+        self.Classifier = LinearSVC(C = 0.01, dual = False, random_state = 42, class_weight = 'balanced', max_iter = 1000)
         self.threshold = Threshold_rej
         self.rejected = rejected
         self.output_dir = OutputDir
