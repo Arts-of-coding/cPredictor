@@ -250,7 +250,7 @@ jobs:
             # Use cPredictor in ci-cd workflow
 
     - name: Create dist dir
-      run: mkdir -p dist figures data test_output
+      run: mkdir -p dist figures data test_output test
 
     - name: Download artifact
       uses: actions/download-artifact@v4
