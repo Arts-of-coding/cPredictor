@@ -25,6 +25,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
+from sklearn.metrics import classification_report
 from sklearn.svm import LinearSVC
 import logging
 import pickle
@@ -647,6 +648,9 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     sns.set_theme(font_scale=0.8)
     cm = sns.clustermap(cnf_matrix.T, cmap="Blues", annot=True,fmt='.2%', row_cluster=False,col_cluster=False)
     cm.savefig(f"{OutputDir}/figures/{SVM_type}_cnf_matrix.png")
+    report = classification_report(true, pred)
+    print(report)
+
     return F1score,acc_score,prec_score
 
 def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
