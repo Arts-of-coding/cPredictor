@@ -259,7 +259,7 @@ jobs:
         path: dist
 
     - name: Download ML tracking packages
-      run: pip install dagshub mlflow
+      run: pip install dagshub mlflow==2.11.3
       
     # Installs from wheel if ci is finished
     - name: Install wheel of package into conda env
