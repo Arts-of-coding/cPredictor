@@ -23,10 +23,8 @@ from importlib.resources import files
 
 print("Import performance function")
 from cPredictor.SVM_prediction import SVM_performance
-os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-import git
 
-reference = "data/cma_meta_atlas.h5ad"
+reference = "test/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
 cPredictor_version = "0.3.5"
@@ -34,6 +32,10 @@ cPredictor_version = "0.3.5"
 metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
 print("Setup tokens")
+
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
+import git
+
 # Set environments and passwords
 DAGSHUB_USER_NAME = 'Arts-of-coding'
 DAGSHUB_TOKEN =  os.environ['DH_key']
