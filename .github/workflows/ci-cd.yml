@@ -257,7 +257,10 @@ jobs:
       with:
         name: my-artifact
         path: dist
-        
+
+    - name: Download ML tracking packages
+      run: pip install dagshub mlflow
+      
     # Installs from wheel if ci is finished
     - name: Install wheel of package into conda env
       run: pip install dist/*.whl --force-reinstall
@@ -267,10 +270,10 @@ jobs:
       run: curl -o data/training_labels_meta.csv https://zenodo.org/records/8096135/files/training_labels_meta.csv?download=1
       
     - name: Download CV data
-      run: curl -o data/cma_meta_atlas.h5ad https://zenodo.org/records/11098327/files/cma_meta_atlas_rfe.h5ad?download=1
+      run: curl -o data/cma_meta_atlas_rfe.h5ad https://zenodo.org/records/11098327/files/cma_meta_atlas_rfe.h5ad?download=1
 
-    - name: Download ML tracking packages
-      run: pip install dagshub mlflow
+    - name: Rename CV data
+      run: mv data/cma_meta_atlas_rfe.h5ad data/cma_meta_atlas.h5ad
       
     - name: Install git
       run: conda install git
