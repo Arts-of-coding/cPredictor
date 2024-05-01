@@ -262,8 +262,11 @@ jobs:
     - name: Install wheel of package into conda env
       run: pip install dist/*.whl --force-reinstall
 
+    - name: Download uv package
+      run: pip install uv
+      
     - name: Download ML tracking packages
-      run: pip install dagshub mlflow==2.11.3 --force-reinstall
+      run: uv pip install dagshub mlflow
       
     # Download data into own directory
     - name: Download labels  
