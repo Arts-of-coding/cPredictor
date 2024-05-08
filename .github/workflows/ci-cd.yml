@@ -257,16 +257,16 @@ jobs:
       with:
         name: my-artifact
         path: dist
-      
-    # Installs from wheel if ci is finished
-    - name: Install wheel of package into conda env
-      run: pip install dist/*.whl --force-reinstall
 
-    - name: Download uv package
-      run: pip install uv
+    - name: Install git
+      run: conda install git
       
     - name: Download ML tracking packages
       run: pip install dagshub mlflow
+
+    # Installs from wheel if ci is finished
+    - name: Install wheel of package into conda env
+      run: pip install dist/*.whl --force-reinstall
       
     # Download data into own directory
     - name: Download labels  
@@ -277,9 +277,6 @@ jobs:
 
     - name: Rename CV data
       run: mv test/cma_meta_atlas_rfe.h5ad test/cma_meta_atlas.h5ad
-      
-    - name: Install git
-      run: conda install git
       
     # Pre-process 
     # Running prediction function
