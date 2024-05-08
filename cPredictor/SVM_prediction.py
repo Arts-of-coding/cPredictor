@@ -31,7 +31,6 @@ import logging
 import pickle
 import joblib
 import json
-matplotlib.rc('pdf', fonttype=42)
 
 class CpredictorClassifier():
     def __init__(self, Threshold_rej, rejected, OutputDir):
