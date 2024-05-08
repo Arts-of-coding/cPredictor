@@ -9,5 +9,5 @@ scikit-learn
 scanpy>=1.9.1
 importlib-resources
 pytest-cov
-pyarrow
+pyarrow<16,>=4.0.0
 scikit-learn-intelex
