@@ -652,9 +652,9 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     print(report)
 
     with open(f"{OutputDir}/metrics.txt", "w") as text_file:
-        text_file.write(F1score)
-        text_file.write(acc_score)
-        text_file.write(prec_score)
+        text_file.write(str(F1score))
+        text_file.write(str(acc_score))
+        text_file.write(str(prec_score))
         text_file.close()
     
     return F1score,acc_score,prec_score
