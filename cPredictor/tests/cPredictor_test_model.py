@@ -22,18 +22,19 @@ import joblib
 import json
 from importlib.resources import files
 from scanpy import read_h5ad
+import subprocess
 
 print("Import performance function")
-from cPredictor.SVM_prediction import (SVM_performance, CpredictorClassifier, CpredictorClassifierPerformance)
+#from cPredictor.SVM_prediction import (SVM_performance, CpredictorClassifier, CpredictorClassifierPerformance)
 
 reference = "test/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
 cPredictor_version = "0.3.5"
 
-#metrics = subprocess.run(["SVM_performance", "--reference_H5AD", reference, "--LabelsPath", labels, "--OutputDir", outdir], capture_output=True)
+subprocess.run(["SVM_performance", "--reference_H5AD", reference, "--LabelsPath", labels, "--OutputDir", outdir], capture_output=True)
 
-metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
+#metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
 print("Setup tokens")
 
@@ -60,6 +61,11 @@ mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
 os.environ['MLFLOW_EXPERIMENT_NAME'] = MLFLOW_EXPERIMENT_NAME
 
 print("Upload metrics to dagshub for model tracking")
+
+# Read in metrics from the produced file
+with open(f"{outdir}metrics.txt") as file: 
+    data = file.read() 
+metrics = [int(i) for i in data if i.isdigit()] 
 
 # Create new experiment if it does not exist yet otherwise add to the current experiment
 try:
