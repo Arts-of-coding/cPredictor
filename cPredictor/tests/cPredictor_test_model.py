@@ -1,9 +1,11 @@
 # Import modules
 import argparse
+import gc
 import os
 import numpy as np
 import pandas as pd
-import scanpy as sc
+import pyarrow as pa
+import scanpy
 import time as tm
 import seaborn as sns
 import matplotlib
@@ -11,28 +13,27 @@ import matplotlib.pyplot as plt
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import precision_score
-from sklearn.metrics import classification_report
-from scanpy import read_h5ad
+from sklearn.model_selection import (StratifiedKFold, KFold)
+from sklearn.preprocessing import (LabelEncoder, MinMaxScaler)
+from sklearn.metrics import (f1_score, accuracy_score, precision_score, classification_report)
+import logging
+import pickle
+import joblib
+import json
 from importlib.resources import files
-import subprocess
+from scanpy import read_h5ad
 
-print("Run performance function")
-#from cPredictor.SVM_prediction import SVM_performance
+print("Import performance function")
+from cPredictor.SVM_prediction import (SVM_performance, CpredictorClassifier, CpredictorClassifierPerformance)
 
 reference = "test/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
 cPredictor_version = "0.3.5"
 
-metrics = subprocess.run(["SVM_performance", "--reference_H5AD", reference, "--LabelsPath", labels, "--OutputDir", outdir], capture_output=True)
+#metrics = subprocess.run(["SVM_performance", "--reference_H5AD", reference, "--LabelsPath", labels, "--OutputDir", outdir], capture_output=True)
 
-#metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
+metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
 print("Setup tokens")
 
