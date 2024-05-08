@@ -651,11 +651,11 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     report = classification_report(true, pred)
     print(report)
 
-    text_file = open(f"{OutputDir}/metrics.txt", "w")
-    text_file.write(F1score)
-    text_file.write(accscore)
-    text_file.write(prec_score)
-    text_file.close()
+    with open(f"{OutputDir}/metrics.txt", "w") as text_file:
+        text_file.write(F1score)
+        text_file.write(acc_score)
+        text_file.write(prec_score)
+        text_file.close()
     
     return F1score,acc_score,prec_score
 
