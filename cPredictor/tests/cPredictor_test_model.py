@@ -20,16 +20,19 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import classification_report
 from scanpy import read_h5ad
 from importlib.resources import files
+import subprocess
 
-print("Import performance function")
-from cPredictor.SVM_prediction import SVM_performance
+print("Run performance function")
+#from cPredictor.SVM_prediction import SVM_performance
 
 reference = "test/cma_meta_atlas.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
 cPredictor_version = "0.3.5"
 
-metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
+metrics = subprocess.run(["SVM_performance", "--reference_H5AD", reference, "--LabelsPath", labels, "--OutputDir", outdir], capture_output=True)
+
+#metrics = SVM_performance(reference_H5AD=reference,LabelsPath=labels,OutputDir=outdir)
 
 print("Setup tokens")
 
