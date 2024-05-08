@@ -266,7 +266,7 @@ jobs:
       run: pip install uv
       
     - name: Download ML tracking packages
-      run: pip install dagshub
+      run: pip install dagshub mlflow
       
     # Download data into own directory
     - name: Download labels  
