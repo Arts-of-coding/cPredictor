@@ -651,6 +651,12 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     report = classification_report(true, pred)
     print(report)
 
+    text_file = open(f"{OutputDir}/metrics.txt", "w")
+    text_file.write(F1score)
+    text_file.write(accscore)
+    text_file.write(prec_score)
+    text_file.close()
+    
     return F1score,acc_score,prec_score
 
 def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
