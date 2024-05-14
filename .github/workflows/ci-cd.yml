@@ -211,7 +211,7 @@ jobs:
     # Set up operating system
     needs: ci
 
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     
     defaults:
       run:
