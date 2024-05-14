@@ -275,8 +275,8 @@ jobs:
     - name: Download CV data
       run: curl -o test/cma_meta_atlas_rfe.h5ad https://zenodo.org/records/11098327/files/cma_meta_atlas_rfe.h5ad?download=1
 
-    - name: Rename CV data
-      run: mv test/cma_meta_atlas_rfe.h5ad test/cma_meta_atlas.h5ad
+    - name: Running performance CLI function
+      run: SVM_performance --reference_H5AD test/cma_meta_atlas_rfe.h5ad --LabelsPath data/training_labels_meta.csv --OutputDir test_output/
       
     # Pre-process 
     # Running prediction function
