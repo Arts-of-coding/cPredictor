@@ -258,12 +258,6 @@ jobs:
         name: my-artifact
         path: dist
 
-    - name: Install git
-      run: conda install git
-      
-    - name: Download ML tracking packages
-      run: pip install dagshub mlflow
-
     # Installs from wheel if ci is finished
     - name: Install wheel of package into conda env
       run: pip install dist/*.whl --force-reinstall
@@ -277,6 +271,12 @@ jobs:
 
     - name: Running performance CLI function
       run: SVM_performance --reference_H5AD test/cma_meta_atlas_rfe.h5ad --LabelsPath data/training_labels_meta.csv --OutputDir test_output/
+
+    - name: Install git
+      run: conda install git
+      
+    - name: Download ML tracking packages
+      run: pip install dagshub mlflow
       
     # Pre-process 
     # Running prediction function
