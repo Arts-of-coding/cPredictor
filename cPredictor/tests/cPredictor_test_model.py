@@ -63,7 +63,7 @@ os.environ['MLFLOW_EXPERIMENT_NAME'] = MLFLOW_EXPERIMENT_NAME
 print("Upload metrics to dagshub for model tracking")
 
 # Read in metrics from the produced file
-with open(f"{outdir}metrics.txt") as file: 
+with open(f"{outdir}/metrics.txt") as file: 
     data = file.read() 
 metrics = [int(i) for i in data if i.isdigit()] 
 
