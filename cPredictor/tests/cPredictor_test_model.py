@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from sklearn.svm import LinearSVC
 from sklearn.calibration import (CalibratedClassifierCV, calibration_curve)
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import (StratifiedKFold, KFold)
+from sklearn.model_selection import (train_test_split, StratifiedKFold, KFold)
 from sklearn.preprocessing import (LabelEncoder, MinMaxScaler)
 from sklearn.metrics import (confusion_matrix, f1_score, accuracy_score, precision_score)
 import logging
