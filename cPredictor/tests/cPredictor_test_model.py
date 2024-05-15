@@ -56,9 +56,11 @@ os.environ['MLFLOW_EXPERIMENT_NAME'] = MLFLOW_EXPERIMENT_NAME
 print("Upload metrics to dagshub for model tracking")
 
 # Read in metrics from the produced file of the CLI command
-with open(f"{outdir}metrics.txt") as file: 
-    data = file.read() 
-metrics = [int(i) for i in data if i.isdigit()] 
+with open(f"{outdir}metrics.txt", "r") as file:
+    metrics = []
+    for line in file:
+        metric = int("".join(filter(str.isdigit, line)))
+        metrics.append(metric)
 
 # Create new experiment if it does not exist yet otherwise add to the current experiment
 try:
