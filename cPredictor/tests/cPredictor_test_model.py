@@ -12,7 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from sklearn.svm import LinearSVC
-from sklearn.calibration import (CalibratedClassifierCV, calibration_curve)
+from sklearn.calibration import (CalibratedClassifierCV, calibration_curve, CalibrationDisplay)
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import (train_test_split, StratifiedKFold, KFold)
 from sklearn.preprocessing import (LabelEncoder, MinMaxScaler)
