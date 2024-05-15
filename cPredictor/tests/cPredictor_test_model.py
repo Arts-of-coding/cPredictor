@@ -172,9 +172,9 @@ os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 import git
 
 # Specify data types and output dirs
-reference = "/test/cma_meta_atlas_rfe.h5ad"
-labels = "/data/training_labels_meta.csv"
-outdir = "/test_output/"
+reference = "test/cma_meta_atlas_rfe.h5ad"
+labels = "data/training_labels_meta.csv"
+outdir = "test_output/"
 cPredictor_version = "0.3.5"
 
 print("Setup tokens")
