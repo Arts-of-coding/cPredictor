@@ -221,13 +221,17 @@ jobs:
     #container: node:latest
     # service containers to run with `postgres-job`
     steps:
+    - name: Cleanup build folder
+      run: |
+        ls -la ./
+        rm -rf ./* || true
+        rm -rf ./.??* || true
+        ls -la ./
+
     - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-        
-    - name: Check-out repository
-      uses: actions/checkout@v2
 
       #- name: Install Python dependencies
       #  uses: py-actions/py-dependency-install@v4
@@ -279,7 +283,9 @@ jobs:
       run: pip install dagshub mlflow
       
     # Pre-process 
-    # Running prediction function
+    - name: Check-out repository
+      uses: actions/checkout@v2
+    
     - name: Running CV and logging results to DagsHub
       env:
         DH_key: ${{ secrets.DH_key }}
