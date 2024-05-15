@@ -59,7 +59,7 @@ print("Upload metrics to dagshub for model tracking")
 with open(f"{outdir}metrics.txt", "r") as file:
     metrics = []
     for line in file:
-        metric = int("".join(filter(str.isdigit, line)))
+        metric = float(line)
         metrics.append(metric)
 
 # Create new experiment if it does not exist yet otherwise add to the current experiment
