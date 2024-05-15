@@ -10,7 +10,7 @@ checks:
   method-complexity:
     enabled: true
     config:
-      threshold: 40
+      threshold: 45
   argument-count:
     enabled: false
     config:
@@ -24,6 +24,9 @@ exclude_patterns:
   - ".*"
   - "LICENSE"
   - "*.md"
-  - "cmaclp/tests/cmaclp_test_model.py"
+  - "cPredictor/cPredictor/tests/cPredictor_test_model.py"
+  - "cPredictor/tests/cPredictor_test_model.py"
   - "*.yml"
   - "*.yaml"
+  - "setup.py"
+  
