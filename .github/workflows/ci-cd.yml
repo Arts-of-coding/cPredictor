@@ -258,6 +258,10 @@ jobs:
     - name: activate venv
       run: source my_env/bin/activate
 
+    # Pre-process 
+    - name: Check-out repository
+      uses: actions/checkout@v2
+      
     - name: Create dist dir
       run: mkdir -p dist figures data test_output test
 
@@ -270,7 +274,7 @@ jobs:
     # Installs from wheel if ci is finished
     - name: Install wheel of package into conda env
       run: pip install dist/*.whl --force-reinstall
-      
+
     # Download data into own directory
     - name: Download labels  
       run: curl -o data/training_labels_meta.csv https://zenodo.org/records/8096135/files/training_labels_meta.csv?download=1
@@ -286,10 +290,6 @@ jobs:
       
     - name: Download ML tracking packages
       run: pip install dagshub mlflow
-      
-    # Pre-process 
-    - name: Check-out repository
-      uses: actions/checkout@v2
     
     - name: Running CV and logging results to DagsHub
       env:
