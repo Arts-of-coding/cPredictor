@@ -658,7 +658,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     report =classification_report(true, pred, output_dict=True)
     df_classification_report = pd.DataFrame(report).transpose()
     df_classification_report = df_classification_report.sort_values(by=['f1-score'], ascending=False)
-    df_classification_report.to_csv(f"{OutputDir}/report.tsv", index=True, sep="\t")
+    df_classification_report.to_csv(f"{OutputDir}report.tsv", index=True, sep="\t")
 
     with open(f"{OutputDir}/metrics.txt", "w") as text_file:
         text_file.write(str(F1score)+"\n")
