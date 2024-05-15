@@ -10,6 +10,7 @@ import time as tm
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from sklearn.svm import LinearSVC
 from sklearn.calibration import (CalibratedClassifierCV, calibration_curve)
 from sklearn.metrics import confusion_matrix
