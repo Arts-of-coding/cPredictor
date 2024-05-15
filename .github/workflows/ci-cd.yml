@@ -276,7 +276,7 @@ jobs:
       run: curl -o data/training_labels_meta.csv https://zenodo.org/records/8096135/files/training_labels_meta.csv?download=1
       
     - name: Download CV data
-      run: curl -o test/cma_meta_atlas_rfe.h5ad https://zenodo.org/records/11098327/files/cma_meta_atlas_rfe.h5ad?download=1
+      run: curl -o test/cma_meta_atlas_rfe.h5ad https://zenodo.org/records/11196844/files/cma_meta_atlas_rfe.h5ad?download=1
 
     - name: Running performance CLI function
       run: SVM_performance --reference_H5AD test/cma_meta_atlas_rfe.h5ad --LabelsPath data/training_labels_meta.csv --OutputDir test_output/
