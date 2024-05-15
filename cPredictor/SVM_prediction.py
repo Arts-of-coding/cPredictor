@@ -529,6 +529,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     Data = cpredictorperf.expression_cutoff(Data, LabelsPath)
 
     data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
+    data_train = data_train.reset_index()
     data_train = data_train.to_numpy(dtype="float16")
     
     data_train = cpredictorperf.preprocess_data_train(data_train)
