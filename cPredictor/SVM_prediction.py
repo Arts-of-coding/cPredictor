@@ -25,6 +25,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
+from sklearn.metrics import classification_report
 from sklearn.svm import LinearSVC
 import logging
 import pickle
@@ -34,7 +35,7 @@ import json
 class CpredictorClassifier():
     def __init__(self, Threshold_rej, rejected, OutputDir):
         self.scaler = MinMaxScaler()
-        self.Classifier = LinearSVC(dual = False, random_state = 42, class_weight = 'balanced', max_iter = 2500)
+        self.Classifier = LinearSVC(C = 0.01, dual = False, random_state = 42, class_weight = 'balanced', max_iter = 1000)
         self.threshold = Threshold_rej
         self.rejected = rejected
         self.output_dir = OutputDir
@@ -325,7 +326,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         cpredictor.save_results(rejected)
 
 
-def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_atlas=False, show_bar=False):
+def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord=None, meta_atlas=False, show_bar=False):
     '''
     Imports the output of the SVM_predictor and saves it to the query_H5AD.
 
@@ -337,6 +338,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
     colord: A .tsv file with the order of the meta_atlas and corresponding colors.
     meta_atlas : If the flag is added the predictions will use meta_atlas data.
     show_bar: Shows bar plots depending on the SVM_type, split over replicates.
+    sub_rep:  A string value specifying an instance within the selected column in query_H5AD.obs.
 
     '''
     logging.basicConfig(level=logging.DEBUG, 
@@ -473,6 +475,10 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, colord=None, meta_at
         # Create a figure and axes
         fig, ax = plt.subplots(1,1)
 
+        # This allows for subsetting the density plot to individual instances of the replicates column
+        if sub_rep is not None:
+            adata = adata[adata.obs[replicates] == str(sub_rep)] # Add funcitonal test here later
+            
         # Iterate over each category and plot the density
         for category, color in category_colors.items():
             subset = adata.obs[adata.obs['SVM_predicted'] == category]
@@ -522,7 +528,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     
     Data = cpredictorperf.expression_cutoff(Data, LabelsPath)
 
-    data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.index.values))
+    data_train = pd.DataFrame.sparse.from_spmatrix(Data.X, index=list(Data.obs.index.values), columns=list(Data.var.features.values))
     data_train = data_train.to_numpy(dtype="float16")
     
     data_train = cpredictorperf.preprocess_data_train(data_train)
@@ -647,6 +653,19 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     sns.set_theme(font_scale=0.8)
     cm = sns.clustermap(cnf_matrix.T, cmap="Blues", annot=True,fmt='.2%', row_cluster=False,col_cluster=False)
     cm.savefig(f"{OutputDir}/figures/{SVM_type}_cnf_matrix.png")
+
+    # Save classification report
+    report =classification_report(true, pred, output_dict=True)
+    df_classification_report = pd.DataFrame(report).transpose()
+    df_classification_report = df_classification_report.sort_values(by=['f1-score'], ascending=False)
+    df_classification_report.to_csv(f"{OutputDir}report.tsv", index=True, sep="\t")
+
+    with open(f"{OutputDir}/metrics.txt", "w") as text_file:
+        text_file.write(str(F1score)+"\n")
+        text_file.write(str(acc_score)+"\n")
+        text_file.write(str(prec_score)+"\n")
+        text_file.close()
+    
     return F1score,acc_score,prec_score
 
 def SVM_pseudobulk(condition_1, condition_1_batch, condition_2, condition_2_batch, Labels_1, OutputDir="pseudobulk_output/", min_cells=50, SVM_type="SVM"):
@@ -902,6 +921,7 @@ def importpars():
     parser.add_argument("--OutputDir", type=str, help="Output directory path")
     parser.add_argument("--SVM_type", type=str, help="Type of SVM prediction (SVM or SVMrej)")
     parser.add_argument("--replicates", type=str, help="Replicates")
+    parser.add_argument("--sub_rep", type=str, help="Replicates")
     parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--meta_atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
     parser.add_argument("--show_bar", dest="show_bar", action="store_true", help="Plot barplot with SVM labels over specified replicates")
@@ -913,6 +933,7 @@ def importpars():
         args.OutputDir,
         args.SVM_type,
         args.replicates,
+        args.sub_rep,
         args.colord,
         args.meta_atlas,
         args.show_bar)
