@@ -237,7 +237,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
             matrix_test[col] = new_col_values
 
         matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
-        matrix_test = matrix_test[col_one_list]
+        matrix_test = matrix_test.loc[:, col_one_list]
         data_test = matrix_test.to_numpy(dtype="float16")
 
         logging.info('Processing test data')
