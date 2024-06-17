@@ -213,6 +213,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         gene_sel = testing.var.features.values
     except AttributeError:
         gene_sel = testing.var.index.values
+        testing.var['features'] = testing.var.index
         logging.debug('Using the var index as names of var features')
 
     matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(gene_sel))
