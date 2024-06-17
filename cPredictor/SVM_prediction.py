@@ -210,9 +210,9 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
 
     # Checks if there is an actual column of "features"
     try:
-        gene_sel = test_obj.var.features.values
+        gene_sel = testing.var.features.values
     except AttributeError:
-        gene_sel = test_obj.var.index.values
+        gene_sel = testing.var.index.values
         logging.debug('Using the var index as names of var features')
 
     matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(gene_sel))
