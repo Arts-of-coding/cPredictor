@@ -279,12 +279,13 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     col_one_list = training1['features'].tolist()
 
     # Save the list present in both
-    with open('data/mergedgenes', 'wb') as fp:
-        pickle.dump(col_one_list, fp)
-
     matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
     matrix_train = matrix_train[matrix_train.columns.intersection(col_one_list)]
     matrix_train = matrix_train[list(matrix_test.columns)]
+
+    # Save the list for future use in pretrained contrainer
+    with open('data/mergedgenes', 'wb') as fp:
+        pickle.dump(list(matrix_test.columns), fp)
     
     logging.info('Number of genes remaining after unifying training and testing matrices: '+str(len(matrix_test.columns)))
     
