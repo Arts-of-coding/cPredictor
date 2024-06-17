@@ -208,14 +208,14 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         logging.warning('Query object does not contain raw data, using sparce matrix from adata.X')
         logging.warning('Please manually check if this sparce matrix contains actual raw counts')
 
-    # testing data
-    try: 
-        testing.var['features']
-    except KeyError:
-        testing.var['features'] = testing.var.index
-        logging.debug('Setting the var index as var features')
+    # Checks if there is an actual column of "features"
+    try:
+        gene_sel = test_obj.var.features.values
+    except AttributeError:
+        gene_sel = test_obj.var.index.values
+        logging.debug('Using the var index as names of var features')
 
-    matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(testing.var.features.values))
+    matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(gene_sel))
 
     # If there is a pregenerated model the pipeline will try to run this first
     if os.path.exists(f"data/model_{SVM_type}.pkl") and meta_atlas is True:
