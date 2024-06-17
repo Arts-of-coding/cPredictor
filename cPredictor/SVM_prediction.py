@@ -210,6 +210,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
 
     # Checks if there is an actual column of "features"
     try:
+        logging.warning('Going into the feature tryexcept')
         gene_sel = testing.var.features.values
     except AttributeError:
         gene_sel = testing.var.index.values
