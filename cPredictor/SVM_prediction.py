@@ -484,15 +484,16 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
         if sub_rep is not None:
             adata = adata[adata.obs[replicates] == str(sub_rep)] # Add funcitonal test here later
 
-        if show_median is True:
-            label_name = f"{category} (Median: {subset['SVMrej_predicted_prob'].median():.2f})"
-            
-        if show_median is False:
-            label_name = f"{category}"
-
         # Iterate over each category and plot the density
         for category, color in category_colors.items():
             subset = adata.obs[adata.obs['SVM_predicted'] == category]
+
+            if show_median is True:
+                label_name = f"{category} (Median: {subset['SVMrej_predicted_prob'].median():.2f})"
+                
+            if show_median is False:
+                label_name = f"{category}"
+
             sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=label_name, ax=ax)
 
         # Set labels and title
