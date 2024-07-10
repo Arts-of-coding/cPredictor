@@ -330,7 +330,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         cpredictor.save_results(rejected)
 
 
-def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord=None, meta_atlas=False, show_bar=False):
+def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord=None, meta_atlas=False, show_bar=False, show_median=False):
     '''
     Imports the output of the SVM_predictor and saves it to the query_H5AD.
 
@@ -343,6 +343,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     meta_atlas : If the flag is added the predictions will use meta_atlas data.
     show_bar: Shows bar plots depending on the SVM_type, split over replicates.
     sub_rep:  A string value specifying an instance within the selected column in query_H5AD.obs.
+    show_median: Shows the median values of the distribution of the predictions.
 
     '''
     logging.basicConfig(level=logging.DEBUG, 
@@ -402,7 +403,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     # Plot absolute and relative barcharts across replicates
     logging.info('Plotting barcharts')
     if show_bar is True:
-        sc.set_figure_params(figsize=(15, 5))
+        sc.set_figure_params(figsize=(10, 5))
         
         key = SVM_key
         obs_1 = key
@@ -482,11 +483,17 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
         # This allows for subsetting the density plot to individual instances of the replicates column
         if sub_rep is not None:
             adata = adata[adata.obs[replicates] == str(sub_rep)] # Add funcitonal test here later
+
+        if show_median is True:
+            label_name = f"{category} (Median: {subset['SVMrej_predicted_prob'].median():.2f})"
             
+        if show_median is False:
+            label_name = f"{category}"
+
         # Iterate over each category and plot the density
         for category, color in category_colors.items():
             subset = adata.obs[adata.obs['SVM_predicted'] == category]
-            sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=f"{category} (Median: {subset['SVMrej_predicted_prob'].median():.2f})", ax=ax)
+            sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=label_name, ax=ax)
 
         # Set labels and title
         plt.xlabel('SVM Certainty Scores')
@@ -929,6 +936,7 @@ def importpars():
     parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--meta_atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
     parser.add_argument("--show_bar", dest="show_bar", action="store_true", help="Plot barplot with SVM labels over specified replicates")
+    parser.add_argument("--show_median", dest="show_median", action="store_true", help="Shows median of scores")
 
     args = parser.parse_args()
 
@@ -940,7 +948,8 @@ def importpars():
         args.sub_rep,
         args.colord,
         args.meta_atlas,
-        args.show_bar)
+        args.show_bar,
+        args.show_median)
     
 
 def pseudopars():
