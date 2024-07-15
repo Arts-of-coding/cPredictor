@@ -403,7 +403,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     # Plot absolute and relative barcharts across replicates
     logging.info('Plotting barcharts')
     if show_bar is True:
-        sc.set_figure_params(figsize=(10, 5))
+        sc.set_figure_params(figsize=(8, 5))
         
         key = SVM_key
         obs_1 = key
@@ -493,7 +493,8 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
                 
             if show_median is False:
                 label_name = f"{category}"
-
+                
+            ax.set(xlim=(0, 1))
             sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=label_name, ax=ax)
 
         # Set labels and title
