@@ -190,7 +190,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
-                        filename='cPredictor_predict.log', filemode='w')
+                        filename=f'{OutputDir}/cPredictor_predict.log', filemode='w')
     
     # Get an instance of the Cpredictor class
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
@@ -208,14 +208,16 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         logging.warning('Query object does not contain raw data, using sparce matrix from adata.X')
         logging.warning('Please manually check if this sparce matrix contains actual raw counts')
 
-    # testing data
-    try: 
-        testing.var['features']
-    except KeyError:
+    # Checks if there is an actual column of "features"
+    try:
+        logging.warning('Going into the feature tryexcept')
+        gene_sel = testing.var.features.values
+    except AttributeError:
+        gene_sel = testing.var.index.values
         testing.var['features'] = testing.var.index
-        logging.debug('Setting the var index as var features')
+        logging.debug('Using the var index as names of var features')
 
-    matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(testing.var.features.values))
+    matrix_test = pd.DataFrame.sparse.from_spmatrix(testing.X, index=list(testing.obs.index.values), columns=list(gene_sel))
 
     # If there is a pregenerated model the pipeline will try to run this first
     if os.path.exists(f"data/model_{SVM_type}.pkl") and meta_atlas is True:
@@ -232,12 +234,12 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
             logging.warning('Please check the validity of your query H5AD object')
             matrix_test = matrix_test.reindex(col_one_list, axis=1)
 
-        new_col_values = np.full(len(matrix_test), 0)
-        for col in missing_cols:
-            matrix_test[col] = new_col_values
+            new_col_values = np.full(len(matrix_test), 0)
+            for col in missing_cols:
+                matrix_test[col] = new_col_values
 
-        matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
-        matrix_test = matrix_test[col_one_list]
+        #matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
+        matrix_test = matrix_test[list(col_one_list)]
         data_test = matrix_test.to_numpy(dtype="float16")
 
         logging.info('Processing test data')
@@ -277,12 +279,13 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     col_one_list = training1['features'].tolist()
 
     # Save the list present in both
-    with open('data/mergedgenes', 'wb') as fp:
-        pickle.dump(col_one_list, fp)
-
     matrix_test = matrix_test[matrix_test.columns.intersection(col_one_list)]
     matrix_train = matrix_train[matrix_train.columns.intersection(col_one_list)]
     matrix_train = matrix_train[list(matrix_test.columns)]
+
+    # Save the list for future use in pretrained contrainer
+    with open('data/mergedgenes', 'wb') as fp:
+        pickle.dump(list(matrix_test.columns), fp)
     
     logging.info('Number of genes remaining after unifying training and testing matrices: '+str(len(matrix_test.columns)))
     
@@ -327,7 +330,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
         cpredictor.save_results(rejected)
 
 
-def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord=None, meta_atlas=False, show_bar=False):
+def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord=None, meta_atlas=False, show_bar=False, show_median=False):
     '''
     Imports the output of the SVM_predictor and saves it to the query_H5AD.
 
@@ -340,11 +343,12 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     meta_atlas : If the flag is added the predictions will use meta_atlas data.
     show_bar: Shows bar plots depending on the SVM_type, split over replicates.
     sub_rep:  A string value specifying an instance within the selected column in query_H5AD.obs.
+    show_median: Shows the median values of the distribution of the predictions.
 
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
-                        filename='cPredictor_import.log', filemode='w')
+                        filename=f'{OutputDir}/cPredictor_import.log', filemode='w')
     logging.info('Reading query data')
 
     # Makes a figure dir in the output dir if it does not exist yet
@@ -399,7 +403,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     # Plot absolute and relative barcharts across replicates
     logging.info('Plotting barcharts')
     if show_bar is True:
-        sc.set_figure_params(figsize=(15, 5))
+        sc.set_figure_params(figsize=(8, 5))
         
         key = SVM_key
         obs_1 = key
@@ -479,11 +483,19 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
         # This allows for subsetting the density plot to individual instances of the replicates column
         if sub_rep is not None:
             adata = adata[adata.obs[replicates] == str(sub_rep)] # Add funcitonal test here later
-            
+
         # Iterate over each category and plot the density
         for category, color in category_colors.items():
             subset = adata.obs[adata.obs['SVM_predicted'] == category]
-            sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=f"{category} (Median: {subset['SVMrej_predicted_prob'].median():.2f})", ax=ax)
+
+            if show_median is True:
+                label_name = f"{category} (Median: {subset['SVMrej_predicted_prob'].median():.2f})"
+                
+            if show_median is False:
+                label_name = f"{category}"
+                
+            ax.set(xlim=(0, 1))
+            sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=label_name, ax=ax)
 
         # Set labels and title
         plt.xlabel('SVM Certainty Scores')
@@ -514,7 +526,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
-                        filename='cPredictor_performance.log', filemode='w')
+                        filename=f'{OutputDir}/cPredictor_performance.log', filemode='w')
 
     logging.info('Reading in the data')
 
@@ -926,6 +938,7 @@ def importpars():
     parser.add_argument("--colord", type=str, help=".tsv file with meta-atlas order and colors")
     parser.add_argument("--meta_atlas", dest="meta_atlas", action="store_true", help="Use meta-atlas data")
     parser.add_argument("--show_bar", dest="show_bar", action="store_true", help="Plot barplot with SVM labels over specified replicates")
+    parser.add_argument("--show_median", dest="show_median", action="store_true", help="Shows median of scores")
 
     args = parser.parse_args()
 
@@ -937,7 +950,8 @@ def importpars():
         args.sub_rep,
         args.colord,
         args.meta_atlas,
-        args.show_bar)
+        args.show_bar,
+        args.show_median)
     
 
 def pseudopars():
