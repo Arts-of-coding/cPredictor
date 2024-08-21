@@ -190,7 +190,7 @@ def SVM_predict(query_H5AD, LabelsPath, OutputDir, reference_H5AD=None, rejected
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
-                        filename='cPredictor_predict.log', filemode='w')
+                        filename=f'{OutputDir}/cPredictor_predict.log', filemode='w')
     
     # Get an instance of the Cpredictor class
     cpredictor = CpredictorClassifier(Threshold_rej, rejected, OutputDir)
@@ -348,7 +348,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
-                        filename='cPredictor_import.log', filemode='w')
+                        filename=f'{OutputDir}/cPredictor_import.log', filemode='w')
     logging.info('Reading query data')
 
     # Makes a figure dir in the output dir if it does not exist yet
@@ -526,7 +526,7 @@ def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Thresh
     '''
     logging.basicConfig(level=logging.DEBUG, 
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
-                        filename='cPredictor_performance.log', filemode='w')
+                        filename=f'{OutputDir}/cPredictor_performance.log', filemode='w')
 
     logging.info('Reading in the data')
 
