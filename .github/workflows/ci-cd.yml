@@ -277,7 +277,7 @@ jobs:
 
     # Download data into own directory
     - name: Download labels  
-      run: curl -o data/training_labels_meta.csv https://zenodo.org/records/8096135/files/training_labels_meta.csv?download=1
+      run: curl -o data/training_labels_meta.csv https://zenodo.org/records/13359497/files/training_labels_meta.csv?download=1
       
     - name: Download CV data
       run: curl -o test/cma_meta_atlas_rfe.h5ad https://zenodo.org/records/11196844/files/cma_meta_atlas_rfe.h5ad?download=1
