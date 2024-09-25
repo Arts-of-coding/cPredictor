@@ -475,16 +475,15 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
 
     if SVM_key == "SVM_predicted":
         logging.info('Plotting label prediction certainty scores')
-        category_colors = category_colors
-
-        # Create a figure and axes
-        fig, ax = plt.subplots(1,1)
+        sns.set_theme(style='ticks')
+        plt.rcParams['figure.figsize'] = 4,4
 
         # This allows for subsetting the density plot to individual instances of the replicates column
         if sub_rep is not None:
-            adata = adata[adata.obs[replicates] == str(sub_rep)] # Add funcitonal test here later
+            adata = adata[adata.obs[replicates] == str(sub_rep)] # Add functional test here later
 
         # Iterate over each category and plot the density
+        subset_joined = []
         for category, color in category_colors.items():
             subset = adata.obs[adata.obs['SVM_predicted'] == category]
 
@@ -494,20 +493,25 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
             if show_median is False:
                 label_name = f"{category}"
                 
-            ax.set(xlim=(0, 1))
-            sns.kdeplot(data=subset['SVMrej_predicted_prob'], fill=True, color=color, label=label_name, ax=ax)
+            #subset[label_name] = subset["SVMrej_predicted_prob"]
+            subset["Cell state"] = label_name
+            subset = subset[["Cell state", "SVMrej_predicted_prob"]]
+            subset_joined.append(subset)
+            #ax.set(xlim=(0, 1))
+        subset_joined = pd.concat(subset_joined)
+        subset_joined = subset_joined.reset_index(drop=True)
+        sns.displot(data=subset_joined, x="SVMrej_predicted_prob", hue="Cell state", kind="kde", fill=True, cut=0, 
+                    palette=category_colors, cumulative=True, common_norm=False, common_grid=True)
 
         # Set labels and title
         plt.xlabel('SVM Certainty Scores')
         plt.ylabel('Density')
         plt.title('Stacked Density Plots of Prediction Certainty Scores by Cell State')
-
-        # Add a legend
-        plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+        plt.xlim([0, 1])
 
         # Saving the density plot
-        fig.savefig(f"{OutputDir}/figures/Density_prediction_scores.pdf", bbox_inches='tight')
-        plt.close(fig)
+        plt.savefig(f"{OutputDir}/figures/Density_prediction_scores.pdf", bbox_inches='tight')
+
     else:
         None
         
