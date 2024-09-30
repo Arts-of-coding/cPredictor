@@ -504,8 +504,8 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
                     palette=category_colors, cumulative=True, common_norm=False, common_grid=True)
 
         # Set labels and title
-        plt.xlabel('SVM Certainty Scores')
-        plt.ylabel('Density')
+        plt.xlabel('Density')
+        plt.ylabel('SVM Certainty Scores')
         plt.title('Stacked Density Plots of Prediction Certainty Scores by Cell State')
         plt.xlim([0, 1])
 
