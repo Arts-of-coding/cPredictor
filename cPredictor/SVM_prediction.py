@@ -500,7 +500,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
             #ax.set(xlim=(0, 1))
         subset_joined = pd.concat(subset_joined)
         subset_joined = subset_joined.reset_index(drop=True)
-        sns.displot(data=subset_joined, x="SVMrej_predicted_prob", hue="Cell state", kind="kde", fill=True, cut=0, 
+        sns.displot(data=subset_joined, y="SVMrej_predicted_prob", hue="Cell state", kind="kde", cut=0, 
                     palette=category_colors, cumulative=True, common_norm=False, common_grid=True)
 
         # Set labels and title
