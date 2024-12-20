@@ -176,7 +176,7 @@ import git
 reference = "test/cma_meta_atlas_rfe.h5ad"
 labels = "data/training_labels_meta.csv"
 outdir = "test_output/"
-cPredictor_version = "0.4.5"
+cPredictor_version = "0.4.6"
 
 print("Setup tokens")
 # Set environments and passwords
