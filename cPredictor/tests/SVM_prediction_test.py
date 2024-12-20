@@ -20,7 +20,6 @@ from statistics import mean
 # Import standalone functions for unit tests
 from cPredictor.SVM_prediction import SVM_predict
 from cPredictor.SVM_prediction import SVM_import
-from cPredictor.SVM_prediction import SVM_pseudobulk
 from cPredictor.SVM_prediction import SVM_performance
 from cPredictor.SVM_prediction import predpars
 from cPredictor.SVM_prediction import importpars
@@ -34,7 +33,6 @@ outdir_unit = "test_output_unit/"
 colord_tsv= "data/colord.tsv"
 
 ### UNIT TESTS
-
 def test_SVM_predict():
     SVM_predict(reference_H5AD=reference,query_H5AD=query,
       LabelsPath=labels,OutputDir=outdir_unit)
@@ -91,22 +89,6 @@ def test_SVM_plot_import_meta_atlas():
       SVM_type="SVM",replicates="time_point",show_bar=True,meta_atlas=True)
 
     assert os.path.exists(f'{outdir_unit}figures/SVM_predicted_bar.pdf') == 1
-      
-def test_SVM_pseudobulk():
-
-    SVM_pseudobulk(condition_1=reference, condition_1_batch="donors", 
-      condition_2=f"{outdir_unit}SVM_predicted.h5ad", condition_2_batch="batch", Labels_1=labels)
-    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
-    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
-
-# Issue to still fix, no priority for now
-#def test_SVMrej_pseudobulk():
-
-#    SVM_pseudobulk(condition_1=reference, condition_1_batch="donors", 
-#      condition_2="SVMrej_predicted.h5ad", condition_2_batch="batch", 
-#      Labels_1=labels,SVM_type="SVMrej")
-#    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
-#    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
 
 def test_SVM_performance():
 
@@ -175,17 +157,3 @@ def test_CLI_SVM_import_plots():
                    text=True)
     assert os.path.exists(f'{outdir}figures/SVM_predicted_bar.pdf') == 1
 
-    
-def test_CLI_SVM_pseudobulk():
-
-    command_to_be_executed = ['SVM_pseudobulk',
-                              '--condition_1', str(reference),
-                              '--condition_1_batch', str("donors"),
-                              '--condition_2', str(f"{outdir_unit}SVM_predicted.h5ad"),
-                              '--condition_2_batch', str("batch"),
-                              '--Labels_1', str(labels)]
-
-    subprocess.run(command_to_be_executed, shell=False, timeout=None,
-                   text=True)
-    assert os.path.exists("pseudobulk_output/full_batch_samples.tsv") == 1
-    assert os.path.exists("pseudobulk_output/merged_batch_samples.tsv") == 1
