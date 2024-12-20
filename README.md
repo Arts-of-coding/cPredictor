@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/cPredictor.svg)](https://badge.fury.io/py/cPredictor)
 [![CI/CD](https://github.com/Arts-of-coding/cPredictor/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Arts-of-coding/cPredictor/actions/workflows/ci-cd.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/598ba117b586183c46a8/maintainability)](https://codeclimate.com/github/Arts-of-coding/cPredictor/maintainability)
+[![Maintainability](https://api.codeclimate.com/v1/badges/31f10bb229ab58b641c3/maintainability)](https://codeclimate.com/github/Arts-of-coding/cPredictor/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/598ba117b586183c46a8/test_coverage)](https://codeclimate.com/github/Arts-of-coding/cPredictor/test_coverage)
 [<img src="https://img.shields.io/badge/dockerhub-images-blue.svg?logo=Docker">](https://hub.docker.com/repository/docker/artsofcoding/cpredictor/general)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -45,7 +45,7 @@ In the activated docker container you can then go to the terminal:
 # SVM_predict --query_H5AD {H5AD_object}.h5ad --OutputDir {your_output_dir} --meta_atlas
 ```
 ## Performance with the corneal meta-atlas
-The docker container is able to predict the identity of ~90.000 cells x ~25.000 genes within two hours.
+Pretrained models can run on ~100.000 cells within 2 minutes on a standard laptop (4 core CPU & 8GB RAM)
 
 To run the container locally you will need a computer with at least 28 GB of RAM and a 4-core processor.
 
