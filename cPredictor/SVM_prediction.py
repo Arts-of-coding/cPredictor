@@ -494,7 +494,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
             #ax.set(xlim=(0, 1))
         subset_joined = pd.concat(subset_joined)
         subset_joined = subset_joined.reset_index(drop=True)
-        sns.displot(data=subset_joined, y="SVMrej_predicted_prob", hue="Cell state", kind="kde", cut=0, 
+        sns.displot(data=subset_joined, y="SVMrej_predicted_prob", hue="Cell state", kind="kde", cut=0,  #, fill=True
                     palette=category_colors, cumulative=True, common_norm=False, common_grid=True)
 
         # Set labels and title
@@ -512,7 +512,7 @@ def SVM_import(query_H5AD, OutputDir, SVM_type, replicates, sub_rep=None, colord
     logging.info('Saving H5AD file')
     adata.write_h5ad(f"{OutputDir}/{SVM_key}.h5ad")
     return
-
+    
 def SVM_performance(reference_H5AD, LabelsPath, OutputDir, rejected=True, Threshold_rej=0.7, fold_splits=5):
     '''
     Tests performance of SVM model based on a reference H5AD dataset.
