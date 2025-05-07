@@ -31,9 +31,9 @@ Documentation of this function will be extended in future versions.
 Docker
 ------------
 Pre-trained models can be run on your data. For instance for human corneal datasets, 
-you can use the first version of the cornea meta-atlas (hcornea_v1) together with the latest version of cPredictor (e.g. v0.4.5).
+you can use the first version of the cornea meta-atlas (hcornea_v1) together with the latest version of cPredictor (e.g. v0.5.0).
 
-The docker containers are organised in this fashion: {version}_{tool}_{dataset}_{version}, like v0.4.5_cpredictor_hcornea_v1.
+The docker containers are organised in this fashion: {version}_{tool}_{dataset}_{version}, like v0.5.0_cpredictor_hcornea_v1.
 
 For Docker to be able to run, you need to install it on your system and have wsl2 installed too. Docker can be run from both Docker Desktop or Rancher Desktop.
 
