@@ -41,14 +41,14 @@ From the command-prompt you can pull the container.
 
 .. code-block:: console
 
-   $ docker pull artsofcoding/cpredictor:v0.4.5_cpredictor_hcornea_v1
+   $ docker pull artsofcoding/cpredictor:v0.5.0_cpredictor_hcornea_v1
 
 Then you can navigate to the directory (current directory (%cd%) on Windows) where you have your dataset of interest in the root.
 This command makes the data load correctly into the test folder.
 
 .. code-block:: console
 
-   $ docker run -it  -v ${PWD}:/app/test --entrypoint /bin/sh artsofcoding/cpredictor:v0.4.5_cpredictor_hcornea_v1
+   $ docker run -it  -v ${PWD}:/app/test --entrypoint /bin/sh artsofcoding/cpredictor:v0.5.0_cpredictor_hcornea_v1
    
 Then you can predict labels in your dataset of interest using the non-rejected version (no certainty score) or with "--rejected". 
 
@@ -83,7 +83,7 @@ Next, you can use this .env file to directly couple locally run cPredictor to Az
 
 .. code-block:: console
 
-   $ docker run -i -t --env-file .env --privileged artsofcoding/cpredictor:v0.4.5_cpredictor_hcornea_v1 --entrypoint /bin/bash
+   $ docker run -i -t --env-file .env --privileged artsofcoding/cpredictor:v0.5.0_cpredictor_hcornea_v1 --entrypoint /bin/bash
 
 Then from the cPredictor container you can directly run it as an Azure directory. Note that this must be coupled to your AZURE_MOUNT_POINT configuration.
 
@@ -101,15 +101,15 @@ The first is your constructed meta-atlas.h5ad object. If you rename your object 
 
    LSC-1	#66CD00
    LSC-2	#76EE00
-   LE	#66CDAA
+   LSE	#66CDAA
    Cj	#191970
    CE	#1874CD
    qSK	#FFB90F
    SK	#EEAD0E
    TSK	#FF7F00
    CF	#CD6600
-   EC	#87CEFA
-   Ves	#8B2323
+   CEC	#87CEFA
+   B/L EC	#8B2323
    Mel	#FFFF00
    IC	#00CED1
    nm-cSC	#FF0000
@@ -123,9 +123,9 @@ With curl or wget you can download the files from these links:
 
 .. code-block:: console
 
-   $ wget https://zenodo.org/records/14536656/files/training_labels_meta.csv?download=1
-   $ wget https://zenodo.org/records/14536656/files/cma_meta_atlas_rfe.h5ad?download=1 # This is for the cornea meta-atlas with genes after RFE.
-   $ wget https://zenodo.org/records/14536656/files/colord.tsv?download=1 # Optional if you want identical colors to the manuscript.
+   $ wget https://zenodo.org/records/15350428/files/training_labels_meta.csv?download=1
+   $ wget https://zenodo.org/records/15350428/files/cma_meta_atlas_rfe.h5ad?download=1 # This is for the cornea meta-atlas with genes after RFE.
+   $ wget https://zenodo.org/records/15350428/files/colord.tsv?download=1 # Optional if you want identical colors to the manuscript.
 
 .. _usage:
 
