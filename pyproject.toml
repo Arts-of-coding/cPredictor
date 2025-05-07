@@ -1,6 +1,6 @@
 [project]
 name = "cPredictor"
-version="0.4.6"
+version="0.5.0"
 description = "Cell command line predictor"
 dynamic = ["dependencies","readme","scripts"]
 
@@ -11,7 +11,7 @@ dependencies = {file = ["requirements.txt"]}
 #"cma.data" = ["*.csv", "*.h5ad"]
 
 [tool.bumpver]
-current_version = "0.4.6"
+current_version = "0.5.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "Bump version {old_version} -> {new_version}"
 commit          = true
