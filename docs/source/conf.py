@@ -7,7 +7,7 @@ copyright = '2024, Arts-of-coding'
 author = 'Arts-of-coding (J. Arts)'
 
 release = '0.4.6'
-version = '0.4.6'
+version = '0.5.0'
 
 # -- General configuration
 

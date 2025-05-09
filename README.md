@@ -30,26 +30,21 @@ To see what each of the current functions do you can run these commands:
 $ SVM_performance --help
 $ SVM_predict --help
 $ SVM_import --help
-$ SVM_pseudobulk --help
 ```
+
 ## Docker
 Alternatively you can run the package containerized through docker:
 ```
 $ docker pull artsofcoding/cpredictor:latest
 $ docker tag artsofcoding/cpredictor:latest cpredictor
-$ docker run -it --name cpredictor -p 8080:80 -v {path_to_H5AD_object}:/data cpredictor
 ```
-In the activated docker container you can then go to the terminal:
-```
-# cd /data
-# SVM_predict --query_H5AD {H5AD_object}.h5ad --OutputDir {your_output_dir} --meta_atlas
-```
-## Performance with the corneal meta-atlas
+For more extensive documentation please navigate to the read-the-docs page on the top right.
+
+## Performance with the corneal cell state meta-atlas
 Pretrained models can run on ~100.000 cells within 2 minutes on a standard laptop (4 core CPU & 8GB RAM)
+Check out DagsHub for model testing (internal cross-validation) and calibration [DagsHub](https://dagshub.com/Arts-of-coding/cPredictor/experiments/#/)
 
-To run the container locally you will need a computer with at least 28 GB of RAM and a 4-core processor.
-
-The documentation will be extended and improved upon in later versions.
+To run the container locally we recommend a computer with at least 16 GB of RAM and a 4-core processor.
 
 ## How to cite
 When using this software package, please correctly cite the accompanied DOI under "Citation": https://zenodo.org/doi/10.5281/zenodo.10621121
